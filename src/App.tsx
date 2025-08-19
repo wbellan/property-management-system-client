@@ -2,7 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { LoginPage } from './pages/auth/LoginPage';
-import { DashboardPage } from './pages/dashboard/DashboardPage';
+import { DashboardLayout } from './components/layout/DashboardLayout';
 import { ProtectedRoute } from './components/layout/ProtectedRoute';
 
 const AppRoutes: React.FC = () => {
@@ -28,15 +28,14 @@ const AppRoutes: React.FC = () => {
         element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <LoginPage />} 
       />
       <Route
-        path="/dashboard"
+        path="/*"
         element={
           <ProtectedRoute>
-            <DashboardPage />
+            <DashboardLayout />
           </ProtectedRoute>
         }
       />
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
-      <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
   );
 };
