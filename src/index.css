@@ -3207,3 +3207,262 @@ body {
     flex-direction: column;
   }
 }
+/* Fix button hover issues and improve navigation */
+.logo-link {
+  text-decoration: none;
+  color: inherit;
+}
+
+.logo-link:hover {
+  text-decoration: none;
+}
+
+.nav-link {
+  text-decoration: none;
+  color: var(--gray-600);
+  font-weight: 500;
+  font-size: 0.875rem;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  transition: all 0.2s ease;
+  display: inline-block;
+}
+
+.nav-link:hover {
+  color: var(--gray-900);
+  background: rgba(255, 255, 255, 0.6);
+  text-decoration: none;
+}
+
+.nav-link-active {
+  color: var(--indigo-600);
+  background: rgba(99, 102, 241, 0.1);
+}
+
+.nav-link-active:hover {
+  color: var(--indigo-700);
+  background: rgba(99, 102, 241, 0.15);
+}
+
+.user-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  background: none;
+  border: none;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  color: var(--gray-700);
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+  text-decoration: none;
+}
+
+.user-menu-item:hover {
+  background: var(--gray-50);
+  color: var(--gray-900);
+  text-decoration: none;
+}
+
+.user-menu-logout {
+  color: #dc2626;
+}
+
+.user-menu-logout:hover {
+  background: rgba(220, 38, 38, 0.1);
+  color: #dc2626;
+}
+
+.mobile-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  color: var(--gray-700);
+  text-decoration: none;
+  border-radius: 0.75rem;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+  transition: all 0.2s ease;
+}
+
+.mobile-nav-item:hover {
+  background: rgba(255, 255, 255, 0.6);
+  color: var(--gray-900);
+  text-decoration: none;
+}
+
+.mobile-nav-item-active {
+  background: var(--indigo-500);
+  color: white;
+}
+
+.mobile-nav-item-active:hover {
+  background: var(--indigo-600);
+  color: white;
+}
+
+.mobile-nav-action {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  background: none;
+  border: none;
+  padding: 0.75rem 1rem;
+  color: var(--gray-700);
+  font-size: 0.875rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-decoration: none;
+}
+
+.mobile-nav-action:hover {
+  background: rgba(255, 255, 255, 0.6);
+  color: var(--gray-900);
+  text-decoration: none;
+}
+
+/* Fix button styling issues */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.75rem;
+  font-weight: 600;
+  font-size: 0.875rem;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-decoration: none;
+  justify-content: center;
+  white-space: nowrap;
+}
+
+.btn:hover {
+  transform: scale(1.02);
+  text-decoration: none;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--indigo-500), var(--purple-600));
+  color: white;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.btn-primary:hover {
+  background: linear-gradient(135deg, var(--indigo-600), var(--purple-700));
+  color: white;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+.btn-secondary {
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--gray-700);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+.btn-secondary:hover {
+  background: white;
+  color: var(--gray-900);
+  border-color: var(--gray-300);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+/* Fix action button hover issues */
+.header-action-btn {
+  position: relative;
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: var(--gray-600);
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  transition: all 0.2s ease;
+}
+
+.header-action-btn:hover {
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--gray-900);
+  border-color: rgba(255, 255, 255, 0.6);
+}
+
+/* Fix user menu trigger */
+.user-menu-trigger {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  cursor: pointer;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.75rem;
+  transition: all 0.2s ease;
+}
+
+.user-menu-trigger:hover {
+  background: rgba(255, 255, 255, 0.9);
+  border-color: rgba(255, 255, 255, 0.6);
+}
+
+/* Improve form button visibility */
+.maintenance-action-btn,
+.lease-action-btn,
+.tenant-action-btn,
+.property-action-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  color: var(--gray-600);
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.maintenance-action-btn:hover,
+.lease-action-btn:hover,
+.tenant-action-btn:hover,
+.property-action-btn:hover {
+  background: white;
+  color: var(--gray-900);
+  border-color: var(--gray-300);
+  box-shadow: 0 2px 4px -1px rgba(0, 0, 0, 0.1);
+}
+
+/* Ensure primary action buttons stay visible */
+.maintenance-action-primary,
+.lease-action-primary {
+  background: var(--indigo-500);
+  border-color: var(--indigo-500);
+  color: white;
+}
+
+.maintenance-action-primary:hover,
+.lease-action-primary:hover {
+  background: var(--indigo-600);
+  border-color: var(--indigo-600);
+  color: white;
+}
+
+.maintenance-action-success {
+  background: #10b981;
+  border-color: #10b981;
+  color: white;
+}
+
+.maintenance-action-success:hover {
+  background: #059669;
+  border-color: #059669;
+  color: white;
+}

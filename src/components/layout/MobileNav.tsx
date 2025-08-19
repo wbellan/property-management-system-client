@@ -1,14 +1,15 @@
 import React from 'react';
-import {
-  X,
-  LayoutDashboard,
-  Building2,
-  Users,
-  FileText,
-  Wrench,
-  BarChart3,
+import { Link, useLocation } from 'react-router-dom';
+import { 
+  X, 
+  LayoutDashboard, 
+  Building2, 
+  Users, 
+  FileText, 
+  Wrench, 
+  BarChart3, 
   Settings,
-  LogOut
+  LogOut 
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -28,10 +29,15 @@ const navItems = [
 
 export const MobileNav: React.FC<MobileNavProps> = ({ isOpen, onClose }) => {
   const { user, logout } = useAuth();
+  const location = useLocation();
 
   const handleLogout = () => {
     logout();
     onClose();
+  };
+
+  const isActiveRoute = (path: string) => {
+    return location.pathname.startsWith(path);
   };
 
   if (!isOpen) return null;
@@ -51,15 +57,15 @@ export const MobileNav: React.FC<MobileNavProps> = ({ isOpen, onClose }) => {
 
         <nav className="mobile-nav-menu">
           {navItems.map((item) => (
-            <a             
+            <Link
               key={item.id}
-              href={item.href}
-              className="mobile-nav-item"
+              to={item.href}
+              className={`mobile-nav-item ${isActiveRoute(item.href) ? 'mobile-nav-item-active' : ''}`}
               onClick={onClose}
             >
               <item.icon size={20} />
               {item.label}
-            </a>
+            </Link>
           ))}
         </nav>
 
@@ -73,12 +79,12 @@ export const MobileNav: React.FC<MobileNavProps> = ({ isOpen, onClose }) => {
               <p className="user-role">{user?.role}</p>
             </div>
           </div>
-
+          
           <div className="mobile-nav-actions">
-            <button className="mobile-nav-action">
+            <Link to="/settings" className="mobile-nav-action" onClick={onClose}>
               <Settings size={20} />
               Settings
-            </button>
+            </Link>
             <button className="mobile-nav-action" onClick={handleLogout}>
               <LogOut size={20} />
               Sign Out

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { Menu, Search, Bell, User, LogOut, Settings } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -9,10 +10,15 @@ interface HeaderProps {
 export const Header: React.FC<HeaderProps> = ({ onMobileMenuOpen }) => {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const { user, logout } = useAuth();
+  const location = useLocation();
 
   const handleLogout = () => {
     logout();
     setShowUserMenu(false);
+  };
+
+  const isActiveRoute = (path: string) => {
+    return location.pathname.startsWith(path);
   };
 
   return (
@@ -28,17 +34,49 @@ export const Header: React.FC<HeaderProps> = ({ onMobileMenuOpen }) => {
 
         {/* Logo */}
         <div className="header-logo">
-          <h1 className="logo-text">PropFlow</h1>
+          <Link to="/dashboard" className="logo-link">
+            <h1 className="logo-text">PropFlow</h1>
+          </Link>
         </div>
 
         {/* Desktop Navigation */}
         <nav className="desktop-nav">
-          <a href="/dashboard" className="nav-link nav-link-active">Dashboard</a>
-          <a href="/properties" className="nav-link">Properties</a>
-          <a href="/tenants" className="nav-link">Tenants</a>
-          <a href="/leases" className="nav-link">Leases</a>
-          <a href="/maintenance" className="nav-link">Maintenance</a>
-          <a href="/reports" className="nav-link">Reports</a>
+          <Link 
+            to="/dashboard" 
+            className={`nav-link ${isActiveRoute('/dashboard') ? 'nav-link-active' : ''}`}
+          >
+            Dashboard
+          </Link>
+          <Link 
+            to="/properties" 
+            className={`nav-link ${isActiveRoute('/properties') ? 'nav-link-active' : ''}`}
+          >
+            Properties
+          </Link>
+          <Link 
+            to="/tenants" 
+            className={`nav-link ${isActiveRoute('/tenants') ? 'nav-link-active' : ''}`}
+          >
+            Tenants
+          </Link>
+          <Link 
+            to="/leases" 
+            className={`nav-link ${isActiveRoute('/leases') ? 'nav-link-active' : ''}`}
+          >
+            Leases
+          </Link>
+          <Link 
+            to="/maintenance" 
+            className={`nav-link ${isActiveRoute('/maintenance') ? 'nav-link-active' : ''}`}
+          >
+            Maintenance
+          </Link>
+          <Link 
+            to="/reports" 
+            className={`nav-link ${isActiveRoute('/reports') ? 'nav-link-active' : ''}`}
+          >
+            Reports
+          </Link>
         </nav>
 
         {/* Right side actions */}
@@ -78,14 +116,14 @@ export const Header: React.FC<HeaderProps> = ({ onMobileMenuOpen }) => {
                   </div>
                 </div>
                 <div className="user-menu-divider"></div>
-                <button className="user-menu-item">
+                <Link to="/settings" className="user-menu-item" onClick={() => setShowUserMenu(false)}>
                   <User size={16} />
                   Profile
-                </button>
-                <button className="user-menu-item">
+                </Link>
+                <Link to="/settings" className="user-menu-item" onClick={() => setShowUserMenu(false)}>
                   <Settings size={16} />
                   Settings
-                </button>
+                </Link>
                 <div className="user-menu-divider"></div>
                 <button className="user-menu-item user-menu-logout" onClick={handleLogout}>
                   <LogOut size={16} />
