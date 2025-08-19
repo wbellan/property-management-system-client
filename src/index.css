@@ -1396,3 +1396,667 @@ body {
     grid-template-columns: 1fr;
   }
 }
+
+/* Reports Styles */
+.reports-container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.reports-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2rem;
+}
+
+.reports-title {
+  font-size: 1.875rem;
+  font-weight: 700;
+  color: var(--gray-900);
+  margin-bottom: 0.25rem;
+}
+
+.reports-subtitle {
+  color: var(--gray-600);
+}
+
+.report-types-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.report-type-card {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 0.75rem;
+  padding: 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.report-type-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.report-type-active {
+  border-color: var(--indigo-500);
+  box-shadow: 0 0 0 1px var(--indigo-500);
+}
+
+.report-type-icon {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  flex-shrink: 0;
+}
+
+.report-type-content {
+  flex: 1;
+}
+
+.report-type-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--gray-900);
+  margin-bottom: 0.125rem;
+}
+
+.report-type-description {
+  font-size: 0.75rem;
+  color: var(--gray-500);
+}
+
+.report-content-card {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 1rem;
+  overflow: hidden;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.report-content-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.5rem;
+  border-bottom: 1px solid var(--gray-200);
+}
+
+.report-content-title {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.report-content-icon {
+  width: 3rem;
+  height: 3rem;
+  border-radius: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+}
+
+.report-content-title h2 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--gray-900);
+  margin-bottom: 0.125rem;
+}
+
+.report-content-title p {
+  font-size: 0.875rem;
+  color: var(--gray-600);
+}
+
+.report-content-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.report-content-body {
+  padding: 1.5rem;
+}
+
+.report-loading,
+.report-empty,
+.report-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
+  text-align: center;
+  color: var(--gray-600);
+}
+
+.report-loading .loading-spinner {
+  margin-bottom: 1rem;
+}
+
+.empty-icon,
+.placeholder-icon {
+  color: var(--gray-400);
+  margin-bottom: 1rem;
+}
+
+/* Dashboard Report */
+.report-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.report-metric-card {
+  background: var(--gray-50);
+  border-radius: 0.75rem;
+  padding: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.metric-icon {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+}
+
+.metric-icon-green {
+  background: linear-gradient(135deg, #10b981, #059669);
+}
+
+.metric-icon-red {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+}
+
+.metric-icon-blue {
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+}
+
+.metric-icon-purple {
+  background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+}
+
+.metric-content h3 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--gray-900);
+  margin-bottom: 0.125rem;
+}
+
+.metric-content p {
+  font-size: 0.875rem;
+  color: var(--gray-600);
+}
+
+/* P&L Report */
+.report-profit-loss {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.pl-section {
+  margin-bottom: 2rem;
+}
+
+.pl-section-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--gray-900);
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid var(--gray-200);
+}
+
+.pl-items {
+  space-y: 0.5rem;
+}
+
+.pl-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0;
+  font-size: 0.875rem;
+}
+
+.pl-item-total {
+  font-weight: 600;
+  font-size: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--gray-200);
+  color: var(--gray-900);
+}
+
+.pl-summary {
+  background: var(--gray-50);
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  margin-top: 2rem;
+}
+
+.pl-net-income,
+.pl-margin {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--gray-900);
+}
+
+.pl-net-income {
+  margin-bottom: 0.5rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--gray-200);
+}
+
+/* Occupancy Report */
+.occupancy-overview {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1.5rem;
+  text-align: center;
+}
+
+.occupancy-stat {
+  background: var(--gray-50);
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+}
+
+.occupancy-number {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--indigo-600);
+  margin-bottom: 0.5rem;
+}
+
+.occupancy-label {
+  font-size: 0.875rem;
+  color: var(--gray-600);
+  font-weight: 500;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .reports-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .report-types-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .report-content-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .report-content-title {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .report-metrics-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .occupancy-overview {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Tenants Styles */
+.tenants-container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.tenants-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem;
+  color: var(--gray-600);
+}
+
+.tenants-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2rem;
+}
+
+.tenants-title {
+  font-size: 1.875rem;
+  font-weight: 700;
+  color: var(--gray-900);
+  margin-bottom: 0.25rem;
+}
+
+.tenants-subtitle {
+  color: var(--gray-600);
+}
+
+.tenants-actions {
+  display: flex;
+  gap: 1rem;
+}
+
+.tenants-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.status-filters {
+  display: flex;
+  gap: 0.5rem;
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 0.5rem;
+  padding: 0.25rem;
+}
+
+.status-filter {
+  background: none;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 0.25rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--gray-600);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.status-filter:hover {
+  color: var(--gray-900);
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.status-filter-active {
+  background: var(--indigo-500);
+  color: white;
+}
+
+.status-filter-active:hover {
+  background: var(--indigo-600);
+  color: white;
+}
+
+.tenants-count {
+  color: var(--gray-600);
+  font-size: 0.875rem;
+}
+
+.tenants-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+  gap: 1.5rem;
+}
+
+.tenant-card {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 1rem;
+  padding: 1.5rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
+}
+
+.tenant-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+.tenant-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.tenant-info {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  flex: 1;
+}
+
+.tenant-avatar {
+  width: 3rem;
+  height: 3rem;
+  background: linear-gradient(135deg, var(--indigo-500), var(--purple-600));
+  border-radius: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 600;
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.tenant-name {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--gray-900);
+  margin-bottom: 0.25rem;
+}
+
+.tenant-property {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: var(--gray-500);
+  font-size: 0.875rem;
+}
+
+.tenant-status {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.tenant-status-active {
+  background: rgba(16, 185, 129, 0.1);
+  color: #059669;
+}
+
+.tenant-status-pending {
+  background: rgba(245, 158, 11, 0.1);
+  color: #d97706;
+}
+
+.tenant-status-expired {
+  background: rgba(239, 68, 68, 0.1);
+  color: #dc2626;
+}
+
+.tenant-details {
+  margin-bottom: 1rem;
+  space-y: 1rem;
+}
+
+.tenant-contact {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.contact-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--gray-600);
+  font-size: 0.875rem;
+}
+
+.tenant-lease-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.lease-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  color: var(--gray-600);
+  font-size: 0.875rem;
+}
+
+.lease-item.balance-due {
+  color: #dc2626;
+}
+
+.lease-label {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--gray-500);
+  margin-bottom: 0.125rem;
+}
+
+.lease-value {
+  display: block;
+  font-weight: 500;
+  color: var(--gray-900);
+}
+
+.balance-due .lease-value {
+  color: #dc2626;
+}
+
+.tenant-card-footer {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--gray-100);
+}
+
+.tenant-action-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: none;
+  border: 1px solid var(--gray-200);
+  color: var(--gray-600);
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.tenant-action-btn:hover {
+  background: var(--gray-50);
+  color: var(--gray-900);
+  border-color: var(--gray-300);
+}
+
+.tenant-view-btn {
+  background: none;
+  border: none;
+  color: var(--indigo-600);
+  font-weight: 500;
+  font-size: 0.875rem;
+  cursor: pointer;
+  margin-left: auto;
+  transition: color 0.2s ease;
+}
+
+.tenant-view-btn:hover {
+  color: var(--indigo-700);
+}
+
+.tenants-empty {
+  text-align: center;
+  padding: 4rem 2rem;
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 1rem;
+}
+
+.text-red-600 {
+  color: #dc2626 !important;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .tenants-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .tenants-actions {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .tenants-actions .btn {
+    flex: 1;
+  }
+
+  .tenants-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1rem;
+  }
+
+  .status-filters {
+    justify-content: center;
+  }
+
+  .tenants-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .tenant-card-footer {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .tenant-action-btn {
+    flex: 1;
+    justify-content: center;
+  }
+}

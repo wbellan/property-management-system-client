@@ -1,3 +1,4 @@
+cat > src/pages/dashboard/DashboardPage.tsx << 'EOF'
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { DashboardContent } from '../../components/dashboard/DashboardContent';
@@ -82,3 +83,4 @@ export const DashboardPage: React.FC = () => {
 
   return <DashboardContent metrics={metrics} user={user} />;
 };
+EOF
