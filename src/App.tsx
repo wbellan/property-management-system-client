@@ -26,12 +26,15 @@ const AppRoutes: React.FC = () => {
 
   return (
     <Routes>
+      {/* PUBLIC ROUTES */}
       <Route
         path="/login"
         element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <LoginPage />}
       />
       <Route path="/setup" element={<SetupPage />} />
       <Route path="/accept-invitation" element={<AcceptInvitationPage />} />
+
+      {/* PROTECTED ROUTES - All dashboard routes go through DashboardLayout */}
       <Route
         path="/*"
         element={
@@ -40,6 +43,8 @@ const AppRoutes: React.FC = () => {
           </ProtectedRoute>
         }
       />
+
+      {/* DEFAULT ROUTE */}
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
     </Routes>
   );

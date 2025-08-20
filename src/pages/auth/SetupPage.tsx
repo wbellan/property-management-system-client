@@ -97,47 +97,71 @@ export const SetupPage: React.FC = () => {
         formData.adminUser.password === formData.adminUser.confirmPassword;
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-cyan-50 flex items-center justify-center p-4">
-            <div className="w-full max-w-3xl">
-                <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/20 overflow-hidden">
+        <div className="min-h-screen bg-gradient flex items-center justify-center" style={{ padding: '1rem' }}>
+            <div className="w-full" style={{ maxWidth: '48rem' }}>
+                <div style={{
+                    background: 'rgba(255, 255, 255, 0.8)',
+                    backdropFilter: 'blur(20px)',
+                    borderRadius: '1.5rem',
+                    border: '1px solid rgba(255, 255, 255, 0.2)',
+                    boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+                    overflow: 'hidden'
+                }}>
                     {/* Header */}
-                    <div className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 p-8 text-white">
-                        <div className="flex items-center justify-center mb-6">
-                            <div className="w-16 h-16 bg-white/20 rounded-3xl flex items-center justify-center shadow-lg">
-                                <Building2 className="w-8 h-8" />
+                    <div className="welcome-card" style={{ marginBottom: 0, borderRadius: 0 }}>
+                        <div className="welcome-content text-center">
+                            <div className="icon-container">
+                                <Building2 style={{ width: '2rem', height: '2rem', color: 'white' }} />
                             </div>
+                            <h1 className="welcome-title">Welcome to PropFlow</h1>
+                            <p className="welcome-subtitle">Let's set up your property management organization</p>
                         </div>
-                        <h1 className="text-3xl font-bold text-center mb-2">Welcome to PropFlow</h1>
-                        <p className="text-center text-white/80">Let's set up your property management organization</p>
                     </div>
 
                     {/* Progress Steps */}
-                    <div className="px-8 py-6 bg-gray-50/50">
+                    <div style={{ padding: '1.5rem 2rem', background: 'rgba(249, 250, 251, 0.5)' }}>
                         <div className="flex items-center justify-between">
                             {steps.map((step, index) => (
                                 <div key={step.id} className="flex items-center flex-1">
                                     <div className="flex items-center space-x-3 flex-1">
-                                        <div className={`w-12 h-12 rounded-full flex items-center justify-center transition-all ${currentStep > step.id
-                                                ? 'bg-green-500 text-white shadow-lg'
+                                        <div style={{
+                                            width: '3rem',
+                                            height: '3rem',
+                                            borderRadius: '50%',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            background: currentStep > step.id
+                                                ? 'linear-gradient(135deg, #10b981, #059669)'
                                                 : currentStep === step.id
-                                                    ? 'bg-indigo-500 text-white shadow-lg'
-                                                    : 'bg-gray-200 text-gray-400'
-                                            }`}>
+                                                    ? 'linear-gradient(135deg, var(--indigo-500), var(--purple-600))'
+                                                    : '#e5e7eb',
+                                            color: currentStep >= step.id ? 'white' : '#9ca3af',
+                                            boxShadow: currentStep >= step.id ? '0 4px 6px -1px rgba(0, 0, 0, 0.1)' : 'none',
+                                            transition: 'all 0.2s ease'
+                                        }}>
                                             {currentStep > step.id ? (
-                                                <Check className="w-6 h-6" />
+                                                <Check style={{ width: '1.5rem', height: '1.5rem' }} />
                                             ) : (
-                                                <step.icon className="w-6 h-6" />
+                                                <step.icon style={{ width: '1.5rem', height: '1.5rem' }} />
                                             )}
                                         </div>
-                                        <div className="hidden sm:block">
-                                            <p className={`font-medium ${currentStep >= step.id ? 'text-indigo-600' : 'text-gray-400'
-                                                }`}>{step.title}</p>
-                                            <p className="text-xs text-gray-500">{step.description}</p>
+                                        <div style={{ display: 'none' }} className="desktop-only">
+                                            <p style={{
+                                                fontWeight: 500,
+                                                color: currentStep >= step.id ? 'var(--indigo-600)' : '#9ca3af'
+                                            }}>{step.title}</p>
+                                            <p style={{ fontSize: '0.75rem', color: '#6b7280' }}>{step.description}</p>
                                         </div>
                                     </div>
                                     {index < steps.length - 1 && (
-                                        <div className={`flex-1 h-0.5 mx-4 transition-all ${currentStep > step.id ? 'bg-green-500' : 'bg-gray-200'
-                                            }`}></div>
+                                        <div style={{
+                                            flex: 1,
+                                            height: '2px',
+                                            margin: '0 1rem',
+                                            background: currentStep > step.id ? 'linear-gradient(135deg, #10b981, #059669)' : '#e5e7eb',
+                                            transition: 'all 0.2s ease'
+                                        }}></div>
                                     )}
                                 </div>
                             ))}
@@ -145,9 +169,9 @@ export const SetupPage: React.FC = () => {
                     </div>
 
                     {/* Form Content */}
-                    <form onSubmit={handleSubmit} className="p-8">
+                    <form onSubmit={handleSubmit} style={{ padding: '2rem' }}>
                         {error && (
-                            <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-2xl">
+                            <div className="error-message mb-6">
                                 {error}
                             </div>
                         )}
@@ -155,12 +179,16 @@ export const SetupPage: React.FC = () => {
                         {currentStep === 1 && (
                             <div className="space-y-6">
                                 <div className="text-center mb-8">
-                                    <h2 className="text-2xl font-bold text-gray-900 mb-2">Organization Details</h2>
-                                    <p className="text-gray-600">What's the name of your property management company?</p>
+                                    <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--gray-900)', marginBottom: '0.5rem' }}>
+                                        Organization Details
+                                    </h2>
+                                    <p style={{ color: 'var(--gray-600)' }}>
+                                        What's the name of your property management company?
+                                    </p>
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                    <label className="form-label">
                                         Organization Name *
                                     </label>
                                     <input
@@ -171,17 +199,22 @@ export const SetupPage: React.FC = () => {
                                             ...formData,
                                             organizationName: e.target.value
                                         })}
-                                        className="w-full px-4 py-4 bg-gray-50/50 border-0 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all placeholder-gray-400"
+                                        className="form-input"
                                         placeholder="Acme Property Management"
                                     />
-                                    <p className="text-xs text-gray-500 mt-1">
+                                    <p style={{ fontSize: '0.75rem', color: 'var(--gray-500)', marginTop: '0.25rem' }}>
                                         This will be displayed throughout the system and in emails to tenants.
                                     </p>
                                 </div>
 
-                                <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-                                    <h4 className="font-medium text-blue-900 mb-2">What's next?</h4>
-                                    <p className="text-sm text-blue-800">
+                                <div style={{
+                                    background: 'rgba(59, 130, 246, 0.1)',
+                                    border: '1px solid rgba(59, 130, 246, 0.2)',
+                                    borderRadius: '0.75rem',
+                                    padding: '1rem'
+                                }}>
+                                    <h4 style={{ fontWeight: 500, color: '#1e40af', marginBottom: '0.5rem' }}>What's next?</h4>
+                                    <p style={{ fontSize: '0.875rem', color: '#1d4ed8' }}>
                                         After setting up your organization, you'll create your admin account and optionally
                                         add your first property-owning entity (like an LLC or individual owner).
                                     </p>
@@ -192,15 +225,17 @@ export const SetupPage: React.FC = () => {
                         {currentStep === 2 && (
                             <div className="space-y-6">
                                 <div className="text-center mb-8">
-                                    <h2 className="text-2xl font-bold text-gray-900 mb-2">Admin Account</h2>
-                                    <p className="text-gray-600">Create your administrator account for {formData.organizationName}</p>
+                                    <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--gray-900)', marginBottom: '0.5rem' }}>
+                                        Admin Account
+                                    </h2>
+                                    <p style={{ color: 'var(--gray-600)' }}>
+                                        Create your administrator account for {formData.organizationName}
+                                    </p>
                                 </div>
 
-                                <div className="grid grid-cols-2 gap-4">
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                                     <div>
-                                        <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                            First Name *
-                                        </label>
+                                        <label className="form-label">First Name *</label>
                                         <input
                                             type="text"
                                             required
@@ -209,14 +244,12 @@ export const SetupPage: React.FC = () => {
                                                 ...formData,
                                                 adminUser: { ...formData.adminUser, firstName: e.target.value }
                                             })}
-                                            className="w-full px-4 py-3 bg-gray-50/50 border-0 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all placeholder-gray-400"
+                                            className="form-input"
                                             placeholder="John"
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                            Last Name *
-                                        </label>
+                                        <label className="form-label">Last Name *</label>
                                         <input
                                             type="text"
                                             required
@@ -225,16 +258,14 @@ export const SetupPage: React.FC = () => {
                                                 ...formData,
                                                 adminUser: { ...formData.adminUser, lastName: e.target.value }
                                             })}
-                                            className="w-full px-4 py-3 bg-gray-50/50 border-0 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all placeholder-gray-400"
+                                            className="form-input"
                                             placeholder="Doe"
                                         />
                                     </div>
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                        Email Address *
-                                    </label>
+                                    <label className="form-label">Email Address *</label>
                                     <input
                                         type="email"
                                         required
@@ -243,19 +274,17 @@ export const SetupPage: React.FC = () => {
                                             ...formData,
                                             adminUser: { ...formData.adminUser, email: e.target.value }
                                         })}
-                                        className="w-full px-4 py-3 bg-gray-50/50 border-0 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all placeholder-gray-400"
+                                        className="form-input"
                                         placeholder="admin@yourcompany.com"
                                     />
-                                    <p className="text-xs text-gray-500 mt-1">
+                                    <p style={{ fontSize: '0.75rem', color: 'var(--gray-500)', marginTop: '0.25rem' }}>
                                         This will be your login email and receive system notifications.
                                     </p>
                                 </div>
 
-                                <div className="grid grid-cols-2 gap-4">
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                                     <div>
-                                        <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                            Password *
-                                        </label>
+                                        <label className="form-label">Password *</label>
                                         <input
                                             type="password"
                                             required
@@ -265,14 +294,12 @@ export const SetupPage: React.FC = () => {
                                                 ...formData,
                                                 adminUser: { ...formData.adminUser, password: e.target.value }
                                             })}
-                                            className="w-full px-4 py-3 bg-gray-50/50 border-0 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all placeholder-gray-400"
+                                            className="form-input"
                                             placeholder="••••••••"
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                            Confirm Password *
-                                        </label>
+                                        <label className="form-label">Confirm Password *</label>
                                         <input
                                             type="password"
                                             required
@@ -281,18 +308,23 @@ export const SetupPage: React.FC = () => {
                                                 ...formData,
                                                 adminUser: { ...formData.adminUser, confirmPassword: e.target.value }
                                             })}
-                                            className="w-full px-4 py-3 bg-gray-50/50 border-0 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all placeholder-gray-400"
+                                            className="form-input"
                                             placeholder="••••••••"
                                         />
                                     </div>
                                 </div>
 
-                                <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
-                                    <h4 className="font-medium text-amber-900 mb-2">Security Requirements</h4>
-                                    <ul className="text-sm text-amber-800 space-y-1">
-                                        <li>• Password must be at least 8 characters long</li>
-                                        <li>• Use a strong, unique password</li>
-                                        <li>• Consider using a password manager</li>
+                                <div style={{
+                                    background: 'rgba(245, 158, 11, 0.1)',
+                                    border: '1px solid rgba(245, 158, 11, 0.2)',
+                                    borderRadius: '0.75rem',
+                                    padding: '1rem'
+                                }}>
+                                    <h4 style={{ fontWeight: 500, color: '#92400e', marginBottom: '0.5rem' }}>Security Requirements</h4>
+                                    <ul style={{ fontSize: '0.875rem', color: '#a16207', margin: 0, paddingLeft: '1rem' }}>
+                                        <li>Password must be at least 8 characters long</li>
+                                        <li>Use a strong, unique password</li>
+                                        <li>Consider using a password manager</li>
                                     </ul>
                                 </div>
                             </div>
@@ -301,14 +333,16 @@ export const SetupPage: React.FC = () => {
                         {currentStep === 3 && (
                             <div className="space-y-6">
                                 <div className="text-center mb-8">
-                                    <h2 className="text-2xl font-bold text-gray-900 mb-2">Initial Entity</h2>
-                                    <p className="text-gray-600">Create your first property owning entity (optional)</p>
+                                    <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--gray-900)', marginBottom: '0.5rem' }}>
+                                        Initial Entity
+                                    </h2>
+                                    <p style={{ color: 'var(--gray-600)' }}>
+                                        Create your first property owning entity (optional)
+                                    </p>
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                        Entity Name
-                                    </label>
+                                    <label className="form-label">Entity Name</label>
                                     <input
                                         type="text"
                                         value={formData.initialEntity.name}
@@ -316,25 +350,23 @@ export const SetupPage: React.FC = () => {
                                             ...formData,
                                             initialEntity: { ...formData.initialEntity, name: e.target.value }
                                         })}
-                                        className="w-full px-4 py-3 bg-gray-50/50 border-0 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all placeholder-gray-400"
+                                        className="form-input"
                                         placeholder="Main Street Properties LLC"
                                     />
-                                    <p className="text-xs text-gray-500 mt-1">
+                                    <p style={{ fontSize: '0.75rem', color: 'var(--gray-500)', marginTop: '0.25rem' }}>
                                         Leave blank to skip and add entities later.
                                     </p>
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                        Entity Type
-                                    </label>
+                                    <label className="form-label">Entity Type</label>
                                     <select
                                         value={formData.initialEntity.entityType}
                                         onChange={(e) => setFormData({
                                             ...formData,
                                             initialEntity: { ...formData.initialEntity, entityType: e.target.value }
                                         })}
-                                        className="w-full px-4 py-3 bg-gray-50/50 border-0 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all"
+                                        className="form-input"
                                     >
                                         <option value="LLC">Limited Liability Company (LLC)</option>
                                         <option value="Corporation">Corporation</option>
@@ -344,32 +376,42 @@ export const SetupPage: React.FC = () => {
                                     </select>
                                 </div>
 
-                                <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-                                    <h4 className="font-medium text-blue-900 mb-2">What's an entity?</h4>
-                                    <p className="text-sm text-blue-800">
+                                <div style={{
+                                    background: 'rgba(59, 130, 246, 0.1)',
+                                    border: '1px solid rgba(59, 130, 246, 0.2)',
+                                    borderRadius: '0.75rem',
+                                    padding: '1rem'
+                                }}>
+                                    <h4 style={{ fontWeight: 500, color: '#1e40af', marginBottom: '0.5rem' }}>What's an entity?</h4>
+                                    <p style={{ fontSize: '0.875rem', color: '#1d4ed8' }}>
                                         Entities are the legal structures that own your properties (like LLCs, corporations,
                                         or individuals). Each entity can have its own bank accounts, chart of accounts, and
                                         financial reporting. You can add more entities later from the dashboard.
                                     </p>
                                 </div>
 
-                                <div className="bg-green-50 border border-green-200 rounded-xl p-4">
-                                    <h4 className="font-medium text-green-900 mb-2">Ready to Launch! 🚀</h4>
-                                    <p className="text-sm text-green-800">
+                                <div style={{
+                                    background: 'rgba(16, 185, 129, 0.1)',
+                                    border: '1px solid rgba(16, 185, 129, 0.2)',
+                                    borderRadius: '0.75rem',
+                                    padding: '1rem'
+                                }}>
+                                    <h4 style={{ fontWeight: 500, color: '#047857', marginBottom: '0.5rem' }}>Ready to Launch! 🚀</h4>
+                                    <p style={{ fontSize: '0.875rem', color: '#059669', marginBottom: '0.5rem' }}>
                                         Once you complete setup, you'll have access to your PropFlow dashboard where you can:
                                     </p>
-                                    <ul className="text-sm text-green-800 mt-2 space-y-1">
-                                        <li>• Add properties and units</li>
-                                        <li>• Invite team members</li>
-                                        <li>• Set up tenant management</li>
-                                        <li>• Configure financial tracking</li>
+                                    <ul style={{ fontSize: '0.875rem', color: '#059669', margin: 0, paddingLeft: '1rem' }}>
+                                        <li>Add properties and units</li>
+                                        <li>Invite team members</li>
+                                        <li>Set up tenant management</li>
+                                        <li>Configure financial tracking</li>
                                     </ul>
                                 </div>
                             </div>
                         )}
 
                         {/* Navigation */}
-                        <div className="flex justify-between pt-8">
+                        <div className="flex justify-between" style={{ paddingTop: '2rem' }}>
                             <button
                                 type="button"
                                 onClick={() => {
@@ -379,9 +421,9 @@ export const SetupPage: React.FC = () => {
                                         setCurrentStep(currentStep - 1);
                                     }
                                 }}
-                                className="flex items-center px-6 py-3 border border-gray-200 rounded-xl font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                                className="btn btn-secondary flex items-center"
                             >
-                                <ArrowLeft className="w-4 h-4 mr-2" />
+                                <ArrowLeft style={{ width: '1rem', height: '1rem', marginRight: '0.5rem' }} />
                                 {currentStep === 1 ? 'Back to Login' : 'Previous'}
                             </button>
 
@@ -393,25 +435,49 @@ export const SetupPage: React.FC = () => {
                                         (currentStep === 1 && !canProceedFromStep1) ||
                                         (currentStep === 2 && !canProceedFromStep2)
                                     }
-                                    className="flex items-center bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-6 py-3 rounded-xl font-medium hover:from-indigo-600 hover:to-purple-700 transition-all transform hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                                    className="btn btn-primary flex items-center"
+                                    style={
+                                        (currentStep === 1 && !canProceedFromStep1) ||
+                                            (currentStep === 2 && !canProceedFromStep2)
+                                            ? { opacity: 0.5, cursor: 'not-allowed' }
+                                            : {}
+                                    }
                                 >
                                     Continue
-                                    <ArrowRight className="w-4 h-4 ml-2" />
+                                    <ArrowRight style={{ width: '1rem', height: '1rem', marginLeft: '0.5rem' }} />
                                 </button>
                             ) : (
                                 <button
                                     type="submit"
                                     disabled={loading}
-                                    className="flex items-center bg-gradient-to-r from-green-500 to-emerald-600 text-white px-8 py-3 rounded-xl font-medium hover:from-green-600 hover:to-emerald-700 transition-all transform hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                                    className="btn flex items-center"
+                                    style={loading
+                                        ? {
+                                            background: 'rgba(16, 185, 129, 0.7)',
+                                            color: 'white',
+                                            opacity: 0.7,
+                                            cursor: 'not-allowed'
+                                        }
+                                        : {
+                                            background: 'linear-gradient(135deg, #10b981, #059669)',
+                                            color: 'white',
+                                            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                                        }
+                                    }
                                 >
                                     {loading ? (
                                         <>
-                                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                                            <div className="loading-spinner" style={{
+                                                width: '1rem',
+                                                height: '1rem',
+                                                marginRight: '0.5rem',
+                                                borderWidth: '2px'
+                                            }}></div>
                                             Creating Organization...
                                         </>
                                     ) : (
                                         <>
-                                            <Check className="w-4 h-4 mr-2" />
+                                            <Check style={{ width: '1rem', height: '1rem', marginRight: '0.5rem' }} />
                                             Complete Setup
                                         </>
                                     )}
@@ -422,10 +488,15 @@ export const SetupPage: React.FC = () => {
                 </div>
 
                 {/* Help Text */}
-                <div className="text-center mt-8">
-                    <p className="text-gray-600 text-sm">
+                <div className="text-center" style={{ marginTop: '2rem' }}>
+                    <p style={{ color: 'var(--gray-600)', fontSize: '0.875rem' }}>
                         Need help? Contact support at{' '}
-                        <a href="mailto:support@propflow.com" className="text-indigo-600 hover:text-indigo-700 font-medium">
+                        <a
+                            href="mailto:support@propflow.com"
+                            style={{ color: 'var(--indigo-600)', fontWeight: 500, textDecoration: 'none' }}
+                            onMouseOver={(e) => e.target.style.color = 'var(--indigo-700)'}
+                            onMouseOut={(e) => e.target.style.color = 'var(--indigo-600)'}
+                        >
                             support@propflow.com
                         </a>
                     </p>

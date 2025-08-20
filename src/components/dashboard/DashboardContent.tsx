@@ -65,18 +65,23 @@ export const DashboardContent: React.FC<DashboardContentProps> = ({ metrics, use
     );
   }
 
-  // Role-based quick actions
+  // Role-based quick actions with proper CSS classes
   const getQuickActions = () => {
     const actions = [];
 
     // User Management (for admins)
-    if (['ORG_ADMIN', 'ENTITY_MANAGER'].includes(currentUser?.role || '')) {
+    if (['SUPER_ADMIN', 'ORG_ADMIN', 'ENTITY_MANAGER'].includes(currentUser?.role || '')) {
       actions.push({
         title: 'Invite User',
         description: 'Add team members',
         icon: UserPlus,
         action: () => navigate('/users'),
-        color: 'from-indigo-500 to-purple-600',
+        className: 'quick-action-btn',
+        style: {
+          background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
+          color: 'white',
+          border: 'none'
+        }
       });
     }
 
@@ -87,7 +92,12 @@ export const DashboardContent: React.FC<DashboardContentProps> = ({ metrics, use
         description: 'New tenant profile',
         icon: UserCheck,
         action: () => navigate('/tenants'),
-        color: 'from-green-500 to-emerald-500',
+        className: 'quick-action-btn',
+        style: {
+          background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+          color: 'white',
+          border: 'none'
+        }
       });
     }
 
@@ -98,14 +108,24 @@ export const DashboardContent: React.FC<DashboardContentProps> = ({ metrics, use
         description: 'Expand portfolio',
         icon: Building2,
         action: () => navigate('/properties'),
-        color: 'from-blue-500 to-cyan-500',
+        className: 'quick-action-btn',
+        style: {
+          background: 'linear-gradient(135deg, #3b82f6 0%, #06b6d4 100%)',
+          color: 'white',
+          border: 'none'
+        }
       },
       {
         title: 'Generate Report',
         description: 'Analytics & insights',
         icon: BarChart3,
         action: () => navigate('/reports'),
-        color: 'from-orange-500 to-red-500',
+        className: 'quick-action-btn',
+        style: {
+          background: 'linear-gradient(135deg, #f59e0b 0%, #ea580c 100%)',
+          color: 'white',
+          border: 'none'
+        }
       }
     );
 
@@ -258,12 +278,13 @@ export const DashboardContent: React.FC<DashboardContentProps> = ({ metrics, use
                 <button
                   key={index}
                   onClick={action.action}
-                  className={`quick-action-btn bg-gradient-to-r ${action.color} text-white hover:scale-105 transition-all shadow-lg flex items-center justify-center p-3 rounded-xl font-medium text-sm`}
+                  className={action.className}
+                  style={action.style}
                 >
-                  <action.icon size={16} className="mr-2" />
-                  <div className="text-left">
-                    <div className="font-semibold">{action.title}</div>
-                    <div className="text-xs opacity-90">{action.description}</div>
+                  <action.icon size={16} style={{ marginRight: '0.5rem' }} />
+                  <div style={{ textAlign: 'left', flex: 1 }}>
+                    <div style={{ fontWeight: 600, fontSize: '0.875rem' }}>{action.title}</div>
+                    <div style={{ fontSize: '0.75rem', opacity: 0.9 }}>{action.description}</div>
                   </div>
                 </button>
               ))}
