@@ -20,32 +20,184 @@ interface User {
 }
 
 export const UsersPage: React.FC = () => {
-    const { user, token } = useAuth();
+    const { user, token, loading: authLoading } = useAuth();
     const [users, setUsers] = useState<User[]>([]);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [showInviteModal, setShowInviteModal] = useState(false);
     const [selectedRole, setSelectedRole] = useState('all');
     const [selectedStatus, setSelectedStatus] = useState('all');
+    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
-        loadUsers();
-    }, []);
+        // Only load users when auth is complete and we have the required data
+        if (!authLoading && user?.organizationId && token) {
+            console.log('UsersPage: Auth ready, loading users...', {
+                authLoading,
+                organizationId: user.organizationId,
+                hasToken: !!token
+            });
+            loadUsers();
+        } else {
+            console.log('UsersPage: Waiting for auth...', {
+                authLoading,
+                organizationId: user?.organizationId,
+                hasToken: !!token
+            });
+        }
+    }, [user?.organizationId, token, authLoading]);
 
     const loadUsers = async () => {
+        // Don't proceed if we don't have required auth data
+        if (!user?.organizationId || !token) {
+            console.log('UsersPage: Missing auth data:', { organizationId: user?.organizationId, hasToken: !!token });
+            return;
+        }
+
+        setLoading(true);
+        setError(null);
+
         try {
-            const response = await apiService.request(
-                `/users/organization/${user?.organizationId}`,
-                {},
-                token
-            );
-            setUsers(response.data || []);
+            console.log('UsersPage: Loading users for organization:', user.organizationId);
+
+            // FIXED: Handle demo mode properly
+            if (token.startsWith('demo-jwt-token')) {
+                console.log('UsersPage: Using demo mode');
+                // Simulate API delay
+                await new Promise(resolve => setTimeout(resolve, 500));
+
+                const demoUsers: User[] = [
+                    {
+                        id: '1',
+                        email: 'admin@demoproperties.com',
+                        firstName: 'Admin',
+                        lastName: 'User',
+                        role: 'SUPER_ADMIN',
+                        status: 'ACTIVE',
+                        emailVerified: true,
+                        lastLoginAt: new Date(),
+                        isPendingInvite: false,
+                        entities: [{ id: 'demo-entity', name: 'Demo Properties LLC', entityType: 'LLC' }],
+                        properties: [],
+                        tenantProfile: null,
+                        createdAt: new Date()
+                    },
+                    {
+                        id: '2',
+                        email: 'orgadmin@demoproperties.com',
+                        firstName: 'Org',
+                        lastName: 'Admin',
+                        role: 'ORG_ADMIN',
+                        status: 'ACTIVE',
+                        emailVerified: true,
+                        lastLoginAt: new Date(Date.now() - 86400000), // 1 day ago
+                        isPendingInvite: false,
+                        entities: [{ id: 'demo-entity', name: 'Demo Properties LLC', entityType: 'LLC' }],
+                        properties: [],
+                        tenantProfile: null,
+                        createdAt: new Date()
+                    },
+                    {
+                        id: '3',
+                        email: 'manager@sunsetproperties.com',
+                        firstName: 'Property',
+                        lastName: 'Manager',
+                        role: 'ENTITY_MANAGER',
+                        status: 'ACTIVE',
+                        emailVerified: true,
+                        lastLoginAt: new Date(Date.now() - 172800000), // 2 days ago
+                        isPendingInvite: false,
+                        entities: [{ id: 'demo-entity', name: 'Demo Properties LLC', entityType: 'LLC' }],
+                        properties: [],
+                        tenantProfile: null,
+                        createdAt: new Date()
+                    },
+                    {
+                        id: '4',
+                        email: 'maintenance@demoproperties.com',
+                        firstName: 'Maintenance',
+                        lastName: 'Staff',
+                        role: 'MAINTENANCE',
+                        status: 'ACTIVE',
+                        emailVerified: true,
+                        lastLoginAt: new Date(Date.now() - 259200000), // 3 days ago
+                        isPendingInvite: false,
+                        entities: [],
+                        properties: [],
+                        tenantProfile: null,
+                        createdAt: new Date()
+                    },
+                    {
+                        id: '5',
+                        email: 'tenant@example.com',
+                        firstName: 'John',
+                        lastName: 'Tenant',
+                        role: 'TENANT',
+                        status: 'ACTIVE',
+                        emailVerified: true,
+                        lastLoginAt: new Date(Date.now() - 345600000), // 4 days ago
+                        isPendingInvite: false,
+                        entities: [],
+                        properties: [],
+                        tenantProfile: { id: 'tenant-profile-1', businessName: null },
+                        createdAt: new Date()
+                    },
+                    {
+                        id: '6',
+                        email: 'newuser@example.com',
+                        firstName: 'Pending',
+                        lastName: 'User',
+                        role: 'PROPERTY_MANAGER',
+                        status: 'PENDING',
+                        emailVerified: false,
+                        lastLoginAt: null,
+                        isPendingInvite: true,
+                        entities: [],
+                        properties: [],
+                        tenantProfile: null,
+                        createdAt: new Date()
+                    }
+                ];
+
+                console.log('UsersPage: Demo users loaded:', demoUsers.length);
+                setUsers(demoUsers);
+            } else {
+                // Real API call
+                console.log('UsersPage: Making real API call');
+                const response = await apiService.request(
+                    `/users/organization/${user.organizationId}`,
+                    {},
+                    token
+                );
+                console.log('UsersPage: API response:', response);
+                setUsers(response.data || response.users || []);
+            }
         } catch (error) {
-            console.error('Failed to load users:', error);
+            console.error('UsersPage: Failed to load users:', error);
+            setError('Failed to load users. Please try again.');
         } finally {
             setLoading(false);
         }
     };
+
+    // Show loading while auth is initializing
+    if (authLoading) {
+        return (
+            <div className="users-loading">
+                <div className="loading-spinner"></div>
+                <p>Initializing...</p>
+            </div>
+        );
+    }
+
+    // Show error if no auth data
+    if (!user?.organizationId) {
+        return (
+            <div className="users-loading">
+                <p>Unable to load organization data. Please try logging out and back in.</p>
+            </div>
+        );
+    }
 
     const filteredUsers = users.filter(u => {
         const matchesSearch =
@@ -193,6 +345,10 @@ export const UsersPage: React.FC = () => {
 
     const handleResendInvite = async (userId: string) => {
         try {
+            if (token?.startsWith('demo-jwt-token')) {
+                alert('Demo: Invitation would be resent to user');
+                return;
+            }
             await apiService.request(`/users/${userId}/resend-invitation`, { method: 'POST' }, token);
             alert('Invitation resent successfully');
         } catch (error) {
@@ -223,8 +379,33 @@ export const UsersPage: React.FC = () => {
         );
     }
 
+    // Show error state
+    if (error) {
+        return (
+            <div className="users-loading">
+                <p>{error}</p>
+                <button onClick={loadUsers} className="btn btn-primary" style={{ marginTop: '1rem' }}>
+                    Retry
+                </button>
+            </div>
+        );
+    }
+
     return (
         <div className="users-container">
+            {/* Debug info - remove in production */}
+            {process.env.NODE_ENV === 'development' && (
+                <div style={{
+                    background: '#f3f4f6',
+                    padding: '0.5rem',
+                    borderRadius: '0.5rem',
+                    marginBottom: '1rem',
+                    fontSize: '0.75rem'
+                }}>
+                    Debug: Org ID: {user?.organizationId}, Users loaded: {users.length}, Token: {token ? (token.startsWith('demo') ? 'Demo Token' : 'Real Token') : 'Missing'}
+                </div>
+            )}
+
             {/* Header */}
             <div className="users-header">
                 <div>
@@ -397,6 +578,20 @@ const InviteUserModal: React.FC<{
 
     const loadAccessOptions = async () => {
         try {
+            // For demo mode, provide mock options
+            if (token?.startsWith('demo-jwt-token')) {
+                setEntities([
+                    { id: 'demo-entity', name: 'Demo Properties LLC', entityType: 'LLC' },
+                    { id: 'demo-entity-2', name: 'Sunset Properties Inc', entityType: 'Corporation' }
+                ]);
+                setProperties([
+                    { id: 'demo-property-1', name: 'Sunset Apartments' },
+                    { id: 'demo-property-2', name: 'Ocean View Complex' }
+                ]);
+                return;
+            }
+
+            // Real API call
             const response = await apiService.request(
                 `/users/access-options/${user?.organizationId}`,
                 {},
@@ -414,12 +609,19 @@ const InviteUserModal: React.FC<{
         setLoading(true);
 
         try {
-            await apiService.request('/users/invite', {
-                method: 'POST',
-                body: JSON.stringify(formData),
-            }, token);
+            if (token?.startsWith('demo-jwt-token')) {
+                // Demo mode - simulate invitation
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                alert('Demo: Invitation would be sent to ' + formData.email);
+            } else {
+                // Real API call
+                await apiService.request('/users/invite', {
+                    method: 'POST',
+                    body: JSON.stringify(formData),
+                }, token);
+                alert('Invitation sent successfully!');
+            }
 
-            alert('Invitation sent successfully!');
             onSuccess();
             onClose();
             setFormData({

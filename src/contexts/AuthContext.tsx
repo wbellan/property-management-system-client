@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import { apiService } from '../services/api/apiService';
 
 // Define interfaces directly in this file
@@ -63,12 +63,31 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   useEffect(() => {
     const initAuth = async () => {
+      console.log('AuthContext: Initializing authentication...');
       const storedToken = localStorage.getItem('propflow_token');
       const storedUser = localStorage.getItem('propflow_user');
 
       if (storedToken && storedUser) {
         try {
-          // Validate token with backend
+          console.log('AuthContext: Found stored token, validating...');
+
+          // FIXED: Handle demo tokens properly
+          if (storedToken.startsWith('demo-jwt-token')) {
+            console.log('AuthContext: Using demo token');
+            const parsedUser = JSON.parse(storedUser);
+
+            // Ensure organizationId is present for demo users
+            if (!parsedUser.organizationId) {
+              parsedUser.organizationId = 'demo-org';
+            }
+
+            setToken(storedToken);
+            setUser(parsedUser);
+            setLoading(false);
+            return;
+          }
+
+          // Validate real token with backend
           const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api/v1'}/auth/validate`, {
             headers: {
               'Authorization': `Bearer ${storedToken}`,
@@ -78,21 +97,38 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
           if (response.ok) {
             const validationData = await response.json();
+            console.log('AuthContext: Token validation successful');
             setToken(storedToken);
             setUser(validationData.user || JSON.parse(storedUser));
           } else {
+            console.log('AuthContext: Token validation failed');
             // Token is invalid, clear storage
             localStorage.removeItem('propflow_token');
             localStorage.removeItem('propflow_user');
           }
         } catch (error) {
-          console.error('Failed to validate token:', error);
-          // Fallback to stored user data for development
-          setToken(storedToken);
-          setUser(JSON.parse(storedUser));
+          console.error('AuthContext: Failed to validate token:', error);
+          // FIXED: Better fallback handling
+          if (storedToken.startsWith('demo-jwt-token')) {
+            // For demo tokens, always use stored data with proper organizationId
+            const parsedUser = JSON.parse(storedUser);
+            if (!parsedUser.organizationId) {
+              parsedUser.organizationId = 'demo-org';
+            }
+            setToken(storedToken);
+            setUser(parsedUser);
+          } else {
+            // Clear invalid real tokens
+            localStorage.removeItem('propflow_token');
+            localStorage.removeItem('propflow_user');
+          }
         }
+      } else {
+        console.log('AuthContext: No stored authentication found');
       }
+
       setLoading(false);
+      console.log('AuthContext: Authentication initialization complete');
     };
 
     initAuth();
@@ -100,15 +136,22 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const login = async (credentials: LoginCredentials) => {
     try {
+      console.log('AuthContext: Starting login process...');
       setLoading(true);
 
       // Try real API first
       try {
         const response = await apiService.login(credentials.email, credentials.password);
 
+        // In your AuthContext login method, after the API call
+        console.log('AuthContext: Full API response:', response);
+        console.log('AuthContext: User from response:', response.user || response.data?.user);
+        console.log('AuthContext: OrganizationId:', (response.user || response.data?.user)?.organizationId);
+
         if (response && (response.success !== false)) {
           // Handle successful API response
           const authData: AuthResponse = response.data || response;
+          console.log('AuthContext: Real API login successful');
 
           setUser(authData.user);
           setToken(authData.accessToken);
@@ -117,7 +160,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           return;
         }
       } catch (apiError) {
-        console.log('API not available, using demo mode:', apiError);
+        console.log('AuthContext: API not available, using demo mode:', apiError);
 
         // Demo mode fallback for development
         if (credentials.email === 'admin@demoproperties.com' && credentials.password === 'admin123') {
@@ -129,7 +172,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             firstName: 'Admin',
             lastName: 'User',
             role: 'SUPER_ADMIN',
-            organizationId: 'demo-org',
+            organizationId: 'demo-org', // ENSURE this is set
             emailVerified: true,
             status: 'ACTIVE',
             entities: [{ id: 'demo-entity', name: 'Demo Properties LLC', type: 'LLC' }]
@@ -137,6 +180,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
           const mockToken = 'demo-jwt-token-' + Date.now();
 
+          console.log('AuthContext: Demo login successful for admin');
           setUser(mockUser);
           setToken(mockToken);
           localStorage.setItem('propflow_token', mockToken);
@@ -152,7 +196,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             firstName: 'Org',
             lastName: 'Admin',
             role: 'ORG_ADMIN',
-            organizationId: 'demo-org',
+            organizationId: 'demo-org', // ENSURE this is set
             emailVerified: true,
             status: 'ACTIVE',
             entities: [{ id: 'demo-entity', name: 'Demo Properties LLC', type: 'LLC' }]
@@ -163,7 +207,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             firstName: 'Property',
             lastName: 'Manager',
             role: 'ENTITY_MANAGER',
-            organizationId: 'demo-org',
+            organizationId: 'demo-org', // ENSURE this is set
             emailVerified: true,
             status: 'ACTIVE',
             entities: [{ id: 'demo-entity', name: 'Demo Properties LLC', type: 'LLC' }]
@@ -174,7 +218,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             firstName: 'Maintenance',
             lastName: 'Staff',
             role: 'MAINTENANCE',
-            organizationId: 'demo-org',
+            organizationId: 'demo-org', // ENSURE this is set
             emailVerified: true,
             status: 'ACTIVE',
             entities: []
@@ -185,7 +229,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             firstName: 'John',
             lastName: 'Tenant',
             role: 'TENANT',
-            organizationId: 'demo-org',
+            organizationId: 'demo-org', // ENSURE this is set
             emailVerified: true,
             status: 'ACTIVE',
             entities: []
@@ -198,6 +242,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           const mockUser = demoUsers[credentials.email];
           const mockToken = 'demo-jwt-token-' + Date.now();
 
+          console.log('AuthContext: Demo login successful for', credentials.email);
           setUser(mockUser);
           setToken(mockToken);
           localStorage.setItem('propflow_token', mockToken);
@@ -207,10 +252,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
 
       // If we get here, credentials are invalid
+      console.log('AuthContext: Invalid credentials');
       throw new Error('Invalid credentials. Please check your email and password.');
 
     } catch (error) {
-      console.error('Login error:', error);
+      console.error('AuthContext: Login error:', error);
       throw error instanceof Error ? error : new Error('Login failed. Please try again.');
     } finally {
       setLoading(false);
@@ -219,19 +265,23 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const logout = async () => {
     try {
+      console.log('AuthContext: Starting logout process...');
+
       // Try to notify the backend about logout
       if (token && !token.startsWith('demo-jwt-token')) {
         try {
           await apiService.logout();
+          console.log('AuthContext: Backend logout successful');
         } catch (error) {
-          console.log('Logout API call failed:', error);
+          console.log('AuthContext: Logout API call failed:', error);
           // Continue with local logout even if API fails
         }
       }
     } catch (error) {
-      console.error('Logout error:', error);
+      console.error('AuthContext: Logout error:', error);
     } finally {
       // Always clear local state
+      console.log('AuthContext: Clearing local authentication state');
       setUser(null);
       setToken(null);
       localStorage.removeItem('propflow_token');
@@ -247,6 +297,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     token,
     isAuthenticated: !!user && !!token,
   };
+
+  // Debug logging in development
+  if (process.env.NODE_ENV === 'development') {
+    console.log('AuthContext render state:', {
+      hasUser: !!user,
+      userOrgId: user?.organizationId,
+      hasToken: !!token,
+      tokenType: token?.startsWith('demo') ? 'demo' : 'real',
+      loading,
+      isAuthenticated: !!user && !!token
+    });
+  }
 
   return (
     <AuthContext.Provider value={value}>
