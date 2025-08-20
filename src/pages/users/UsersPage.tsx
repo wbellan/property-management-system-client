@@ -212,9 +212,9 @@ export const UsersPage: React.FC = () => {
     });
 
     const UserCard = ({ user: u }: { user: User }) => (
-        <div className="card hover-lift">
-            <div className="flex items-start justify-between mb-4">
-                <div className="flex items-center space-x-3">
+        <div className="card hover-lift" style={{ marginBottom: '1.5rem' }}>
+            <div className="flex items-start justify-between" style={{ marginBottom: '1.5rem' }}>
+                <div className="flex items-center" style={{ gap: '1rem' }}>
                     <div style={{
                         width: '3rem',
                         height: '3rem',
@@ -225,6 +225,7 @@ export const UsersPage: React.FC = () => {
                         color: 'white',
                         fontWeight: 500,
                         fontSize: '0.875rem',
+                        flexShrink: 0,
                         background: u.status === 'ACTIVE'
                             ? 'linear-gradient(135deg, #10b981, #059669)'
                             : u.status === 'PENDING'
@@ -233,11 +234,11 @@ export const UsersPage: React.FC = () => {
                     }}>
                         {u.firstName[0]}{u.lastName[0]}
                     </div>
-                    <div>
-                        <h3 style={{ fontSize: '1.125rem', fontWeight: 'bold', color: 'var(--gray-900)' }}>
+                    <div style={{ flex: 1 }}>
+                        <h3 style={{ fontSize: '1.125rem', fontWeight: 'bold', color: 'var(--gray-900)', marginBottom: '0.25rem' }}>
                             {u.firstName} {u.lastName}
                         </h3>
-                        <p style={{ fontSize: '0.875rem', color: 'var(--gray-500)' }}>{u.email}</p>
+                        <p style={{ fontSize: '0.875rem', color: 'var(--gray-500)', marginBottom: '0.5rem' }}>{u.email}</p>
                         {u.tenantProfile && (
                             <span style={{
                                 display: 'inline-flex',
@@ -246,8 +247,7 @@ export const UsersPage: React.FC = () => {
                                 borderRadius: '0.5rem',
                                 fontSize: '0.75rem',
                                 background: 'rgba(139, 92, 246, 0.1)',
-                                color: '#7c3aed',
-                                marginTop: '0.25rem'
+                                color: '#7c3aed'
                             }}>
                                 Has Tenant Profile
                             </span>
@@ -270,16 +270,16 @@ export const UsersPage: React.FC = () => {
                 </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '1.5rem' }}>
                 <div>
-                    <p style={{ fontSize: '0.875rem', color: 'var(--gray-500)' }}>Role</p>
+                    <p style={{ fontSize: '0.875rem', color: 'var(--gray-500)', marginBottom: '0.5rem' }}>Role</p>
                     <div className="flex items-center space-x-2">
                         <Shield style={{ width: '1rem', height: '1rem', color: 'var(--indigo-500)' }} />
                         <span style={{ fontWeight: 500 }}>{formatRole(u.role)}</span>
                     </div>
                 </div>
                 <div>
-                    <p style={{ fontSize: '0.875rem', color: 'var(--gray-500)' }}>Status</p>
+                    <p style={{ fontSize: '0.875rem', color: 'var(--gray-500)', marginBottom: '0.5rem' }}>Status</p>
                     <span style={{
                         display: 'inline-flex',
                         alignItems: 'center',
@@ -300,20 +300,20 @@ export const UsersPage: React.FC = () => {
             </div>
 
             {u.entities.length > 0 && (
-                <div className="mb-4">
-                    <p style={{ fontSize: '0.875rem', color: 'var(--gray-500)', marginBottom: '0.5rem' }}>Entity Access</p>
-                    <div className="flex flex-wrap" style={{ gap: '0.25rem' }}>
+                <div style={{ marginBottom: '1.5rem' }}>
+                    <p style={{ fontSize: '0.875rem', color: 'var(--gray-500)', marginBottom: '0.75rem' }}>Entity Access</p>
+                    <div className="flex flex-wrap" style={{ gap: '0.5rem' }}>
                         {u.entities.map(entity => (
                             <span key={entity.id} style={{
                                 display: 'inline-flex',
                                 alignItems: 'center',
-                                padding: '0.125rem 0.5rem',
+                                padding: '0.25rem 0.75rem',
                                 borderRadius: '0.5rem',
                                 fontSize: '0.75rem',
                                 background: 'rgba(59, 130, 246, 0.1)',
                                 color: '#2563eb'
                             }}>
-                                <Building2 style={{ width: '0.75rem', height: '0.75rem', marginRight: '0.25rem' }} />
+                                <Building2 style={{ width: '0.75rem', height: '0.75rem', marginRight: '0.5rem' }} />
                                 {entity.name}
                             </span>
                         ))}
@@ -321,24 +321,44 @@ export const UsersPage: React.FC = () => {
                 </div>
             )}
 
-            <div className="flex items-center justify-between" style={{ paddingTop: '1rem', borderTop: '1px solid var(--gray-100)' }}>
-                <span style={{ fontSize: '0.75rem', color: 'var(--gray-500)' }}>
-                    {u.lastLoginAt ? `Last login: ${new Date(u.lastLoginAt).toLocaleDateString()}` : 'Never logged in'}
-                </span>
-                <button style={{
-                    fontSize: '0.875rem',
-                    color: 'var(--indigo-600)',
-                    fontWeight: 500,
-                    background: 'none',
-                    border: 'none',
-                    cursor: 'pointer',
-                    transition: 'color 0.2s ease'
-                }}
-                    onMouseOver={(e) => e.target.style.color = 'var(--indigo-700)'}
-                    onMouseOut={(e) => e.target.style.color = 'var(--indigo-600)'}
-                >
-                    Manage Access
-                </button>
+            <div style={{ paddingTop: '1.5rem', borderTop: '1px solid var(--gray-100)' }}>
+                <div className="flex items-center justify-between" style={{ minHeight: '2.5rem' }}>
+                    <div style={{ flex: 1, marginRight: '1rem' }}>
+                        <span style={{
+                            fontSize: '0.75rem',
+                            color: 'var(--gray-500)',
+                            display: 'block',
+                            lineHeight: '1.4'
+                        }}>
+                            {u.lastLoginAt ? `Last login: ${new Date(u.lastLoginAt).toLocaleDateString()}` : 'Never logged in'}
+                        </span>
+                    </div>
+                    <div style={{ flexShrink: 0 }}>
+                        <button style={{
+                            fontSize: '0.875rem',
+                            color: 'var(--indigo-600)',
+                            fontWeight: 500,
+                            background: 'none',
+                            border: 'none',
+                            cursor: 'pointer',
+                            transition: 'color 0.2s ease',
+                            padding: '0.5rem 0.75rem',
+                            borderRadius: '0.5rem',
+                            whiteSpace: 'nowrap'
+                        }}
+                            onMouseOver={(e) => {
+                                e.target.style.color = 'var(--indigo-700)';
+                                e.target.style.backgroundColor = 'rgba(99, 102, 241, 0.05)';
+                            }}
+                            onMouseOut={(e) => {
+                                e.target.style.color = 'var(--indigo-600)';
+                                e.target.style.backgroundColor = 'transparent';
+                            }}
+                        >
+                            Manage Access
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     );
@@ -461,8 +481,8 @@ export const UsersPage: React.FC = () => {
             {/* Stats */}
             <div className="stats-grid">
                 <div className="stat-card">
-                    <div className="flex items-center space-x-3">
-                        <div className="stat-icon stat-icon-blue">
+                    <div className="flex items-center" style={{ gap: '1rem' }}>
+                        <div className="stat-icon stat-icon-blue" style={{ flexShrink: 0 }}>
                             <Users style={{ width: '1.5rem', height: '1.5rem' }} />
                         </div>
                         <div>
@@ -472,8 +492,8 @@ export const UsersPage: React.FC = () => {
                     </div>
                 </div>
                 <div className="stat-card">
-                    <div className="flex items-center space-x-3">
-                        <div className="stat-icon stat-icon-green">
+                    <div className="flex items-center" style={{ gap: '1rem' }}>
+                        <div className="stat-icon stat-icon-green" style={{ flexShrink: 0 }}>
                             <Shield style={{ width: '1.5rem', height: '1.5rem' }} />
                         </div>
                         <div>
@@ -485,8 +505,8 @@ export const UsersPage: React.FC = () => {
                     </div>
                 </div>
                 <div className="stat-card">
-                    <div className="flex items-center space-x-3">
-                        <div className="stat-icon stat-icon-orange">
+                    <div className="flex items-center" style={{ gap: '1rem' }}>
+                        <div className="stat-icon stat-icon-orange" style={{ flexShrink: 0 }}>
                             <Mail style={{ width: '1.5rem', height: '1.5rem' }} />
                         </div>
                         <div>
@@ -498,8 +518,8 @@ export const UsersPage: React.FC = () => {
                     </div>
                 </div>
                 <div className="stat-card">
-                    <div className="flex items-center space-x-3">
-                        <div className="stat-icon stat-icon-purple">
+                    <div className="flex items-center" style={{ gap: '1rem' }}>
+                        <div className="stat-icon stat-icon-purple" style={{ flexShrink: 0 }}>
                             <Building2 style={{ width: '1.5rem', height: '1.5rem' }} />
                         </div>
                         <div>
