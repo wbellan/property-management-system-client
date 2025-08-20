@@ -1,15 +1,17 @@
+// src/components/layout/MobileNav.tsx
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { 
-  X, 
-  LayoutDashboard, 
-  Building2, 
-  Users, 
-  FileText, 
-  Wrench, 
-  BarChart3, 
+import {
+  X,
+  LayoutDashboard,
+  Building2,
+  Users,
+  UserCheck,  // Changed from Users to UserCheck for tenants
+  FileText,
+  Wrench,
+  BarChart3,
   Settings,
-  LogOut 
+  LogOut
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -17,15 +19,6 @@ interface MobileNavProps {
   isOpen: boolean;
   onClose: () => void;
 }
-
-const navItems = [
-  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, href: '/dashboard' },
-  { id: 'properties', label: 'Properties', icon: Building2, href: '/properties' },
-  { id: 'tenants', label: 'Tenants', icon: Users, href: '/tenants' },
-  { id: 'leases', label: 'Leases', icon: FileText, href: '/leases' },
-  { id: 'maintenance', label: 'Maintenance', icon: Wrench, href: '/maintenance' },
-  { id: 'reports', label: 'Reports', icon: BarChart3, href: '/reports' },
-];
 
 export const MobileNav: React.FC<MobileNavProps> = ({ isOpen, onClose }) => {
   const { user, logout } = useAuth();
@@ -39,6 +32,21 @@ export const MobileNav: React.FC<MobileNavProps> = ({ isOpen, onClose }) => {
   const isActiveRoute = (path: string) => {
     return location.pathname.startsWith(path);
   };
+
+  // Role-based navigation items
+  const navItems = [
+    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, href: '/dashboard', roles: ['*'] },
+    { id: 'properties', label: 'Properties', icon: Building2, href: '/properties', roles: ['*'] },
+    { id: 'tenants', label: 'Tenants', icon: UserCheck, href: '/tenants', roles: ['ORG_ADMIN', 'ENTITY_MANAGER', 'PROPERTY_MANAGER'] },
+    { id: 'users', label: 'User Management', icon: Users, href: '/users', roles: ['ORG_ADMIN', 'ENTITY_MANAGER'] },
+    { id: 'leases', label: 'Leases', icon: FileText, href: '/leases', roles: ['*'] },
+    { id: 'maintenance', label: 'Maintenance', icon: Wrench, href: '/maintenance', roles: ['*'] },
+    { id: 'reports', label: 'Reports', icon: BarChart3, href: '/reports', roles: ['*'] },
+  ];
+
+  const filteredNavItems = navItems.filter(item =>
+    item.roles.includes('*') || item.roles.includes(user?.role || '')
+  );
 
   if (!isOpen) return null;
 
@@ -56,7 +64,7 @@ export const MobileNav: React.FC<MobileNavProps> = ({ isOpen, onClose }) => {
         </div>
 
         <nav className="mobile-nav-menu">
-          {navItems.map((item) => (
+          {filteredNavItems.map((item) => (
             <Link
               key={item.id}
               to={item.href}
@@ -79,7 +87,7 @@ export const MobileNav: React.FC<MobileNavProps> = ({ isOpen, onClose }) => {
               <p className="user-role">{user?.role}</p>
             </div>
           </div>
-          
+
           <div className="mobile-nav-actions">
             <Link to="/settings" className="mobile-nav-action" onClick={onClose}>
               <Settings size={20} />

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Eye, EyeOff, Building2 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 // Define LoginCredentials interface directly here
 interface LoginCredentials {
@@ -14,9 +15,9 @@ interface LoginFormProps {
 }
 
 export const LoginForm: React.FC<LoginFormProps> = ({ onLogin, isLoading, error }) => {
-  const [credentials, setCredentials] = useState<LoginCredentials>({ 
-    email: '', 
-    password: '' 
+  const [credentials, setCredentials] = useState<LoginCredentials>({
+    email: '',
+    password: ''
   });
   const [showPassword, setShowPassword] = useState(false);
 
@@ -97,6 +98,17 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onLogin, isLoading, error 
 
         <div className="demo-credentials">
           <p>Demo: admin@demoproperties.com / admin123</p>
+          <div className="text-center mt-2">
+            <p className="text-xs text-gray-500">
+              New to PropFlow?{' '}
+              <Link
+                to="/setup"
+                className="text-indigo-600 hover:text-indigo-700 font-medium"
+              >
+                Set up your organization
+              </Link>
+            </p>
+          </div>
         </div>
       </div>
     </div>

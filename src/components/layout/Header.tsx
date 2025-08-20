@@ -1,3 +1,4 @@
+// src/components/layout/Header.tsx
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Menu, Search, Bell, User, LogOut, Settings } from 'lucide-react';
@@ -21,11 +22,26 @@ export const Header: React.FC<HeaderProps> = ({ onMobileMenuOpen }) => {
     return location.pathname.startsWith(path);
   };
 
+  // Role-based navigation items
+  const navigationItems = [
+    { path: '/dashboard', label: 'Dashboard', roles: ['*'] },
+    { path: '/properties', label: 'Properties', roles: ['*'] },
+    { path: '/tenants', label: 'Tenants', roles: ['ORG_ADMIN', 'ENTITY_MANAGER', 'PROPERTY_MANAGER'] },
+    { path: '/users', label: 'Users', roles: ['ORG_ADMIN', 'ENTITY_MANAGER'] }, // ADD THIS
+    { path: '/leases', label: 'Leases', roles: ['*'] },
+    { path: '/maintenance', label: 'Maintenance', roles: ['*'] },
+    { path: '/reports', label: 'Reports', roles: ['*'] },
+  ];
+
+  const filteredNavItems = navigationItems.filter(item =>
+    item.roles.includes('*') || item.roles.includes(user?.role || '')
+  );
+
   return (
     <header className="header">
       <div className="header-content">
         {/* Mobile menu button */}
-        <button 
+        <button
           className="mobile-menu-btn"
           onClick={onMobileMenuOpen}
         >
@@ -41,42 +57,15 @@ export const Header: React.FC<HeaderProps> = ({ onMobileMenuOpen }) => {
 
         {/* Desktop Navigation */}
         <nav className="desktop-nav">
-          <Link 
-            to="/dashboard" 
-            className={`nav-link ${isActiveRoute('/dashboard') ? 'nav-link-active' : ''}`}
-          >
-            Dashboard
-          </Link>
-          <Link 
-            to="/properties" 
-            className={`nav-link ${isActiveRoute('/properties') ? 'nav-link-active' : ''}`}
-          >
-            Properties
-          </Link>
-          <Link 
-            to="/tenants" 
-            className={`nav-link ${isActiveRoute('/tenants') ? 'nav-link-active' : ''}`}
-          >
-            Tenants
-          </Link>
-          <Link 
-            to="/leases" 
-            className={`nav-link ${isActiveRoute('/leases') ? 'nav-link-active' : ''}`}
-          >
-            Leases
-          </Link>
-          <Link 
-            to="/maintenance" 
-            className={`nav-link ${isActiveRoute('/maintenance') ? 'nav-link-active' : ''}`}
-          >
-            Maintenance
-          </Link>
-          <Link 
-            to="/reports" 
-            className={`nav-link ${isActiveRoute('/reports') ? 'nav-link-active' : ''}`}
-          >
-            Reports
-          </Link>
+          {filteredNavItems.map(item => (
+            <Link
+              key={item.path}
+              to={item.path}
+              className={`nav-link ${isActiveRoute(item.path) ? 'nav-link-active' : ''}`}
+            >
+              {item.label}
+            </Link>
+          ))}
         </nav>
 
         {/* Right side actions */}
@@ -94,7 +83,7 @@ export const Header: React.FC<HeaderProps> = ({ onMobileMenuOpen }) => {
 
           {/* User menu */}
           <div className="user-menu">
-            <button 
+            <button
               className="user-menu-trigger"
               onClick={() => setShowUserMenu(!showUserMenu)}
             >

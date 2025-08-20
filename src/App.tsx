@@ -6,6 +6,8 @@ import { DashboardLayout } from './components/layout/DashboardLayout';
 import { ProtectedRoute } from './components/layout/ProtectedRoute';
 import { AcceptInvitationPage, SetupPage } from './pages/auth';
 
+import './index.css';
+
 const AppRoutes: React.FC = () => {
   const { isAuthenticated, loading } = useAuth();
 

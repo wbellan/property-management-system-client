@@ -9,6 +9,7 @@ import { LeasesPage } from '../../pages/leases/LeasesPage';
 import { MaintenancePage } from '../../pages/maintenance/MaintenancePage';
 import { ReportsPage } from '../../pages/reports/ReportsPage';
 import { SettingsPage } from '../../pages/settings/SettingsPage';
+import { UsersPage } from '../../pages/users';
 
 export const DashboardLayout: React.FC = () => {
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
@@ -25,6 +26,7 @@ export const DashboardLayout: React.FC = () => {
       <main className="main-content">
         <Routes>
           <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/users/*" element={<UsersPage />} />  
           <Route path="/properties/*" element={<PropertiesPage />} />
           <Route path="/tenants/*" element={<TenantsPage />} />
           <Route path="/leases/*" element={<LeasesPage />} />

@@ -1,5 +1,19 @@
 import React from 'react';
-import { Home, DollarSign, TrendingUp, Calendar, Wrench, Plus, ChevronRight, BarChart3 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import {
+  Home,
+  DollarSign,
+  TrendingUp,
+  Calendar,
+  Wrench,
+  Plus,
+  ChevronRight,
+  BarChart3,
+  UserPlus,
+  UserCheck,
+  Building2
+} from 'lucide-react';
+import { useAuth } from '../../contexts/AuthContext';
 
 // Define interfaces directly here
 interface DashboardMetrics {
@@ -40,6 +54,9 @@ interface DashboardContentProps {
 }
 
 export const DashboardContent: React.FC<DashboardContentProps> = ({ metrics, user }) => {
+  const navigate = useNavigate();
+  const { user: currentUser } = useAuth();
+
   if (!metrics) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -47,6 +64,55 @@ export const DashboardContent: React.FC<DashboardContentProps> = ({ metrics, use
       </div>
     );
   }
+
+  // Role-based quick actions
+  const getQuickActions = () => {
+    const actions = [];
+
+    // User Management (for admins)
+    if (['ORG_ADMIN', 'ENTITY_MANAGER'].includes(currentUser?.role || '')) {
+      actions.push({
+        title: 'Invite User',
+        description: 'Add team members',
+        icon: UserPlus,
+        action: () => navigate('/users'),
+        color: 'from-indigo-500 to-purple-600',
+      });
+    }
+
+    // Tenant Management (for managers)
+    if (['ORG_ADMIN', 'ENTITY_MANAGER', 'PROPERTY_MANAGER'].includes(currentUser?.role || '')) {
+      actions.push({
+        title: 'Add Tenant',
+        description: 'New tenant profile',
+        icon: UserCheck,
+        action: () => navigate('/tenants'),
+        color: 'from-green-500 to-emerald-500',
+      });
+    }
+
+    // Universal actions
+    actions.push(
+      {
+        title: 'Add Property',
+        description: 'Expand portfolio',
+        icon: Building2,
+        action: () => navigate('/properties'),
+        color: 'from-blue-500 to-cyan-500',
+      },
+      {
+        title: 'Generate Report',
+        description: 'Analytics & insights',
+        icon: BarChart3,
+        action: () => navigate('/reports'),
+        color: 'from-orange-500 to-red-500',
+      }
+    );
+
+    return actions;
+  };
+
+  const quickActions = getQuickActions();
 
   return (
     <div className="space-y-6">
@@ -56,11 +122,17 @@ export const DashboardContent: React.FC<DashboardContentProps> = ({ metrics, use
           <h1 className="welcome-title">Good morning, {user?.firstName}!</h1>
           <p className="welcome-subtitle">Here's what's happening with your property portfolio today.</p>
           <div className="welcome-actions">
-            <button className="btn btn-primary">
+            <button
+              className="btn btn-primary"
+              onClick={() => navigate('/properties')}
+            >
               <Plus size={16} style={{ marginRight: '0.5rem' }} />
               Add Property
             </button>
-            <button className="btn btn-secondary">
+            <button
+              className="btn btn-secondary"
+              onClick={() => navigate('/reports')}
+            >
               View Reports
             </button>
           </div>
@@ -82,8 +154,8 @@ export const DashboardContent: React.FC<DashboardContentProps> = ({ metrics, use
           <h3 className="stat-value">{metrics.occupancy?.rate || 0}%</h3>
           <p className="stat-label">Occupancy Rate</p>
           <div className="stat-progress">
-            <div 
-              className="stat-progress-bar stat-progress-blue" 
+            <div
+              className="stat-progress-bar stat-progress-blue"
               style={{ width: `${metrics.occupancy?.rate || 0}%` }}
             ></div>
           </div>
@@ -182,15 +254,19 @@ export const DashboardContent: React.FC<DashboardContentProps> = ({ metrics, use
           <div className="quick-actions-card">
             <h3 className="card-title">Quick Actions</h3>
             <div className="quick-actions">
-              <button className="quick-action-btn quick-action-primary">
-                Create New Lease
-              </button>
-              <button className="quick-action-btn quick-action-success">
-                Add Maintenance Request
-              </button>
-              <button className="quick-action-btn quick-action-warning">
-                Generate Report
-              </button>
+              {quickActions.map((action, index) => (
+                <button
+                  key={index}
+                  onClick={action.action}
+                  className={`quick-action-btn bg-gradient-to-r ${action.color} text-white hover:scale-105 transition-all shadow-lg flex items-center justify-center p-3 rounded-xl font-medium text-sm`}
+                >
+                  <action.icon size={16} className="mr-2" />
+                  <div className="text-left">
+                    <div className="font-semibold">{action.title}</div>
+                    <div className="text-xs opacity-90">{action.description}</div>
+                  </div>
+                </button>
+              ))}
             </div>
           </div>
         </div>
