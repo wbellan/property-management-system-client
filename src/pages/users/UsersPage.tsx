@@ -114,93 +114,13 @@ export const UsersPage: React.FC = () => {
         setError(null);
 
         try {
-            if (token.startsWith('demo-jwt-token')) {
-                await new Promise(resolve => setTimeout(resolve, 500));
-                const demoUsers: User[] = [
-                    {
-                        id: '1',
-                        email: 'admin@demoproperties.com',
-                        firstName: 'Admin',
-                        lastName: 'User',
-                        role: 'SUPER_ADMIN',
-                        status: 'ACTIVE',
-                        emailVerified: true,
-                        lastLoginAt: new Date(),
-                        isPendingInvite: false,
-                        entities: [{ id: 'demo-entity', name: 'Demo Properties LLC', entityType: 'LLC' }],
-                        properties: [],
-                        tenantProfile: null,
-                        createdAt: new Date()
-                    },
-                    {
-                        id: '2',
-                        email: 'orgadmin@demoproperties.com',
-                        firstName: 'Org',
-                        lastName: 'Admin',
-                        role: 'ORG_ADMIN',
-                        status: 'ACTIVE',
-                        emailVerified: true,
-                        lastLoginAt: new Date(Date.now() - 86400000),
-                        isPendingInvite: false,
-                        entities: [{ id: 'demo-entity', name: 'Demo Properties LLC', entityType: 'LLC' }],
-                        properties: [],
-                        tenantProfile: null,
-                        createdAt: new Date()
-                    },
-                    {
-                        id: '3',
-                        email: 'manager@sunsetproperties.com',
-                        firstName: 'Property',
-                        lastName: 'Manager',
-                        role: 'PROPERTY_MANAGER',
-                        status: 'ACTIVE',
-                        emailVerified: true,
-                        lastLoginAt: new Date(Date.now() - 172800000),
-                        isPendingInvite: false,
-                        entities: [{ id: 'demo-entity', name: 'Demo Properties LLC', entityType: 'LLC' }],
-                        properties: [
-                            { id: 'demo-property-1', name: 'Sunset Apartments' },
-                            { id: 'demo-property-2', name: 'Ocean View Complex' }
-                        ],
-                        tenantProfile: null,
-                        createdAt: new Date()
-                    },
-                    {
-                        id: '4',
-                        email: 'maintenance@demoproperties.com',
-                        firstName: 'Maintenance',
-                        lastName: 'Staff',
-                        role: 'MAINTENANCE',
-                        status: 'ACTIVE',
-                        emailVerified: true,
-                        lastLoginAt: new Date(Date.now() - 259200000),
-                        isPendingInvite: false,
-                        entities: [],
-                        properties: [],
-                        tenantProfile: null,
-                        createdAt: new Date()
-                    },
-                    {
-                        id: '5',
-                        email: 'tenant@example.com',
-                        firstName: 'John',
-                        lastName: 'Tenant',
-                        role: 'TENANT',
-                        status: 'ACTIVE',
-                        emailVerified: true,
-                        lastLoginAt: new Date(Date.now() - 345600000),
-                        isPendingInvite: false,
-                        entities: [],
-                        properties: [],
-                        tenantProfile: { id: 'tenant-profile-1', businessName: null },
-                        createdAt: new Date()
-                    }
-                ];
-                setUsers(demoUsers);
-            } else {
-                const response = await userAccessService.getOrganizationUsers(user.organizationId);
-                setUsers(response.data || []);
-            }
+            console.log('Loading users for organization:', user.organizationId);
+
+            // Always call the real API - remove demo data entirely
+            const response = await userAccessService.getOrganizationUsers(user.organizationId);
+            console.log('API Response:', response);
+
+            setUsers(response.data || []);
         } catch (error) {
             console.error('Failed to load users:', error);
             setError('Failed to load users. Please try again.');
@@ -596,62 +516,23 @@ const InviteUserModal: React.FC<{
         }
     }, [isOpen, token]);
 
-    // const handleSubmit = async (e: React.FormEvent) => {
-    //     e.preventDefault();
-    //     setLoading(true);
-
-    //     try {
-    //         if (token?.startsWith('demo-jwt-token')) {
-    //             await new Promise(resolve => setTimeout(resolve, 1000));
-    //             alert('Demo: Invitation would be sent to ' + formData.email);
-    //         } else {
-    //             await apiService.request('/users/invite', {
-    //                 method: 'POST',
-    //                 body: JSON.stringify(formData),
-    //             }, token);
-    //             alert('Invitation sent successfully!');
-    //         }
-
-    //         onSuccess();
-    //         onClose();
-    //         setFormData({
-    //             email: '',
-    //             firstName: '',
-    //             lastName: '',
-    //             role: 'PROPERTY_MANAGER',
-    //             entityIds: [],
-    //             propertyIds: [],
-    //         });
-    //     } catch (error) {
-    //         console.error('Failed to invite user:', error);
-    //         alert('Failed to send invitation. Please try again.');
-    //     } finally {
-    //         setLoading(false);
-    //     }
-    // };
-
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
 
         try {
-            if (token?.startsWith('demo-jwt-token')) {
-                await new Promise(resolve => setTimeout(resolve, 1000));
-                alert('Demo: Invitation would be sent to ' + formData.email);
-            } else {
-                // Use the real invitation service
-                const { invitationService } = await import('../../services/api/invitationService');
-                await invitationService.inviteUser({
-                    email: formData.email,
-                    firstName: formData.firstName,
-                    lastName: formData.lastName,
-                    role: formData.role,
-                    entityIds: formData.entityIds,
-                    propertyIds: formData.propertyIds
-                }, token);
-                alert('Invitation sent successfully!');
-            }
+            // Remove demo logic - always use real API
+            const { invitationService } = await import('../../services/api/invitationService');
+            await invitationService.inviteUser({
+                email: formData.email,
+                firstName: formData.firstName,
+                lastName: formData.lastName,
+                role: formData.role,
+                entityIds: formData.entityIds,
+                propertyIds: formData.propertyIds
+            }, token);
 
+            alert('Invitation sent successfully!');
             onSuccess();
             onClose();
             setFormData({
