@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Users, Plus, Search, Filter, Settings, Mail, Shield, Building2, UserPlus } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { apiService } from '../../services/api/apiService';
+import { userAccessService } from '../../services/api/userAccessService';
+import { UserAccessModal } from '../../components/users/UserAccessModal';
 
 interface User {
     id: string;
@@ -29,6 +31,12 @@ export const UsersPage: React.FC = () => {
     const [selectedStatus, setSelectedStatus] = useState('all');
     const [error, setError] = useState<string | null>(null);
 
+    // User Access Modal states
+    const [selectedUserForAccess, setSelectedUserForAccess] = useState<User | null>(null);
+    const [showAccessModal, setShowAccessModal] = useState(false);
+    const [accessEntities, setAccessEntities] = useState<any[]>([]);
+    const [accessProperties, setAccessProperties] = useState<any[]>([]);
+
     useEffect(() => {
         // Only load users when auth is complete and we have the required data
         if (!authLoading && user?.organizationId && token) {
@@ -46,6 +54,80 @@ export const UsersPage: React.FC = () => {
             });
         }
     }, [user?.organizationId, token, authLoading]);
+
+    const handleManageAccessClick = async (selectedUser: User) => {
+        setSelectedUserForAccess(selectedUser);
+
+        // Load entities and properties for the modal
+        if (token?.startsWith('demo-jwt-token')) {
+            // Demo data
+            setAccessEntities([
+                { id: 'demo-entity', name: 'Demo Properties LLC', entityType: 'LLC' },
+                { id: 'demo-entity-2', name: 'Sunset Properties Inc', entityType: 'Corporation' }
+            ]);
+            setAccessProperties([
+                { id: 'demo-property-1', name: 'Sunset Apartments', entityId: 'demo-entity' },
+                { id: 'demo-property-2', name: 'Ocean View Complex', entityId: 'demo-entity' }
+            ]);
+        } else {
+            // Real API call using userAccessService
+            try {
+                const response = await userAccessService.getEntitiesAndProperties(user!.organizationId);
+                setAccessEntities(response.data.entities || []);
+                setAccessProperties(response.data.properties || []);
+            } catch (error) {
+                console.error('Failed to load access options:', error);
+                // Set empty arrays as fallback
+                setAccessEntities([]);
+                setAccessProperties([]);
+            }
+        }
+
+        setShowAccessModal(true);
+    };
+
+    const handleSaveUserAccess = async (userId: string, updatedData: {
+        role: string;
+        status: string;
+        entityIds: string[];
+        propertyIds: string[];
+    }) => {
+        try {
+            if (token?.startsWith('demo-jwt-token')) {
+                // Demo mode - just update local state
+                setUsers(prev => prev.map(user =>
+                    user.id === userId
+                        ? {
+                            ...user,
+                            role: updatedData.role,
+                            status: updatedData.status,
+                            entities: accessEntities.filter(e => updatedData.entityIds.includes(e.id)),
+                            properties: accessProperties.filter(p => updatedData.propertyIds.includes(p.id))
+                        }
+                        : user
+                ));
+
+                // Show success message
+                alert('User access updated successfully!');
+            } else {
+                // Real API call using userAccessService
+                await userAccessService.updateUserAccess(userId, {
+                    role: updatedData.role,
+                    status: updatedData.status as 'ACTIVE' | 'INACTIVE' | 'PENDING',
+                    entityIds: updatedData.entityIds,
+                    propertyIds: updatedData.propertyIds
+                });
+
+                // Reload users to get updated data
+                await loadUsers();
+                alert('User access updated successfully!');
+            }
+        } catch (error) {
+            console.error('Failed to update user access:', error);
+            alert('Failed to update user access. Please try again.');
+            throw error; // Re-throw so the modal can handle it
+        }
+    };
 
     const loadUsers = async () => {
         // Don't proceed if we don't have required auth data
@@ -162,15 +244,11 @@ export const UsersPage: React.FC = () => {
                 console.log('UsersPage: Demo users loaded:', demoUsers.length);
                 setUsers(demoUsers);
             } else {
-                // Real API call
+                // Real API call using userAccessService
                 console.log('UsersPage: Making real API call');
-                const response = await apiService.request(
-                    `/users/organization/${user.organizationId}`,
-                    {},
-                    token
-                );
+                const response = await userAccessService.getOrganizationUsers(user.organizationId);
                 console.log('UsersPage: API response:', response);
-                setUsers(response.data || response.users || []);
+                setUsers(response.data || []);
             }
         } catch (error) {
             console.error('UsersPage: Failed to load users:', error);
@@ -334,25 +412,27 @@ export const UsersPage: React.FC = () => {
                         </span>
                     </div>
                     <div style={{ flexShrink: 0 }}>
-                        <button style={{
-                            fontSize: '0.875rem',
-                            color: 'var(--indigo-600)',
-                            fontWeight: 500,
-                            background: 'none',
-                            border: 'none',
-                            cursor: 'pointer',
-                            transition: 'color 0.2s ease',
-                            padding: '0.5rem 0.75rem',
-                            borderRadius: '0.5rem',
-                            whiteSpace: 'nowrap'
-                        }}
+                        <button
+                            onClick={() => handleManageAccessClick(u)}
+                            style={{
+                                fontSize: '0.875rem',
+                                color: 'var(--indigo-600)',
+                                fontWeight: 500,
+                                background: 'none',
+                                border: 'none',
+                                cursor: 'pointer',
+                                transition: 'color 0.2s ease',
+                                padding: '0.5rem 0.75rem',
+                                borderRadius: '0.5rem',
+                                whiteSpace: 'nowrap'
+                            }}
                             onMouseOver={(e) => {
-                                e.target.style.color = 'var(--indigo-700)';
-                                e.target.style.backgroundColor = 'rgba(99, 102, 241, 0.05)';
+                                (e.target as HTMLButtonElement).style.color = 'var(--indigo-700)';
+                                (e.target as HTMLButtonElement).style.backgroundColor = 'rgba(99, 102, 241, 0.05)';
                             }}
                             onMouseOut={(e) => {
-                                e.target.style.color = 'var(--indigo-600)';
-                                e.target.style.backgroundColor = 'transparent';
+                                (e.target as HTMLButtonElement).style.color = 'var(--indigo-600)';
+                                (e.target as HTMLButtonElement).style.backgroundColor = 'transparent';
                             }}
                         >
                             Manage Access
@@ -567,11 +647,27 @@ export const UsersPage: React.FC = () => {
                     onSuccess={loadUsers}
                 />
             )}
+
+            {/* User Access Modal */}
+            {selectedUserForAccess && (
+                <UserAccessModal
+                    user={selectedUserForAccess}
+                    isOpen={showAccessModal}
+                    onClose={() => {
+                        setShowAccessModal(false);
+                        setSelectedUserForAccess(null);
+                    }}
+                    onSave={handleSaveUserAccess}
+                    entities={accessEntities}
+                    properties={accessProperties}
+                    currentUserRole={user?.role || 'ORG_ADMIN'}
+                />
+            )}
         </div>
     );
 };
 
-// Enhanced Invite User Modal
+// Enhanced Invite User Modal (unchanged from your existing code)
 const InviteUserModal: React.FC<{
     isOpen: boolean;
     onClose: () => void;
