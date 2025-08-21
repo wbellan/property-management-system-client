@@ -40,7 +40,7 @@ interface UserAccessModalProps {
     onClose: () => void;
     onSave: (userId: string, updatedData: {
         role: string;
-        status: string;
+        status: 'ACTIVE' | 'INACTIVE' | 'PENDING'; // Fixed: specific status types
         entityIds: string[];
         propertyIds: string[];
     }) => Promise<void>;
@@ -104,22 +104,37 @@ export const UserAccessModal: React.FC<UserAccessModalProps> = ({
     properties,
     currentUserRole
 }) => {
-    const [formData, setFormData] = useState({
+    // FIXED: Proper type for status
+    const [formData, setFormData] = useState<{
+        role: string;
+        entityIds: string[];
+        propertyIds: string[];
+        status: 'ACTIVE' | 'INACTIVE' | 'PENDING';
+    }>({
         role: user.role,
         entityIds: user.entities?.map(e => e.id) || [],
         propertyIds: user.properties?.map(p => p.id) || [],
-        status: user.status
+        status: (user.status as 'ACTIVE' | 'INACTIVE' | 'PENDING') || 'ACTIVE'
     });
+
     const [loading, setLoading] = useState(false);
     const [errors, setErrors] = useState<string[]>([]);
 
     useEffect(() => {
         if (user) {
+            console.log('UserAccessModal: Setting form data for user:', {
+                userId: user.id,
+                role: user.role,
+                status: user.status,
+                entities: user.entities,
+                properties: user.properties
+            });
+
             setFormData({
                 role: user.role,
                 entityIds: user.entities?.map(e => e.id) || [],
                 propertyIds: user.properties?.map(p => p.id) || [],
-                status: user.status
+                status: (user.status as 'ACTIVE' | 'INACTIVE' | 'PENDING') || 'ACTIVE'
             });
         }
     }, [user]);
@@ -142,8 +157,10 @@ export const UserAccessModal: React.FC<UserAccessModalProps> = ({
         setErrors([]);
 
         try {
-            // Validation
+            // FIXED: Enhanced validation with logging
             const newErrors: string[] = [];
+
+            console.log('UserAccessModal: Saving with form data:', formData);
 
             if (!formData.role) {
                 newErrors.push('Role is required');
@@ -163,18 +180,124 @@ export const UserAccessModal: React.FC<UserAccessModalProps> = ({
                 return;
             }
 
-            await onSave(user.id, {
+            // FIXED: Clear entityIds and propertyIds based on role restrictions
+            let finalEntityIds = formData.entityIds;
+            let finalPropertyIds = formData.propertyIds;
+
+            // If role doesn't support entity access, clear entities
+            if (!['ENTITY_MANAGER', 'PROPERTY_MANAGER', 'ACCOUNTANT'].includes(formData.role)) {
+                finalEntityIds = [];
+            }
+
+            // If role doesn't support property access, clear properties  
+            if (!['PROPERTY_MANAGER'].includes(formData.role)) {
+                finalPropertyIds = [];
+            }
+
+            console.log('UserAccessModal: Final data after role restrictions:', {
                 role: formData.role,
-                status: formData.status,
-                entityIds: formData.entityIds,
-                propertyIds: formData.propertyIds
+                entityIds: finalEntityIds,
+                propertyIds: finalPropertyIds
             });
 
+            // FIXED: Ensure the data structure matches exactly what the API expects
+            const saveData = {
+                role: formData.role,
+                status: formData.status,
+                entityIds: finalEntityIds,
+                propertyIds: finalPropertyIds
+            };
+
+            console.log('UserAccessModal: Calling onSave with:', {
+                userId: user.id,
+                saveData
+            });
+
+            await onSave(user.id, saveData);
+
+            console.log('UserAccessModal: Save successful, closing modal');
             onClose();
         } catch (error) {
+            console.error('UserAccessModal: Save failed:', error);
             setErrors(['Failed to update user access. Please try again.']);
         } finally {
             setLoading(false);
+        }
+    };
+
+    // FIXED: Add logging for entity selection changes
+    const handleEntityChange = (entityId: string, checked: boolean) => {
+        console.log('UserAccessModal: Entity selection changed:', { entityId, checked });
+
+        if (checked) {
+            setFormData(prev => {
+                const newData = {
+                    ...prev,
+                    entityIds: [...prev.entityIds, entityId]
+                };
+                console.log('UserAccessModal: New entity data:', newData);
+                return newData;
+            });
+        } else {
+            setFormData(prev => {
+                const newData = {
+                    ...prev,
+                    entityIds: prev.entityIds.filter(id => id !== entityId),
+                    propertyIds: prev.propertyIds.filter(pId =>
+                        !properties.some(p => p.id === pId && p.entityId === entityId)
+                    )
+                };
+                console.log('UserAccessModal: Removed entity data:', newData);
+                return newData;
+            });
+        }
+    };
+
+    // Update the role change handler to clear inappropriate access
+    const handleRoleChange = (newRole: string) => {
+        console.log('UserAccessModal: Role changed to:', newRole);
+
+        setFormData(prev => {
+            const newData = { ...prev, role: newRole };
+
+            // Clear entity access if new role doesn't support it
+            if (!['ENTITY_MANAGER', 'PROPERTY_MANAGER', 'ACCOUNTANT'].includes(newRole)) {
+                newData.entityIds = [];
+                newData.propertyIds = []; // Also clear properties since they depend on entities
+            }
+
+            // Clear property access if new role doesn't support it
+            if (!['PROPERTY_MANAGER'].includes(newRole)) {
+                newData.propertyIds = [];
+            }
+
+            console.log('UserAccessModal: New form data after role change:', newData);
+            return newData;
+        });
+    };
+
+    // FIXED: Add logging for property selection changes
+    const handlePropertyChange = (propertyId: string, checked: boolean) => {
+        console.log('UserAccessModal: Property selection changed:', { propertyId, checked });
+
+        if (checked) {
+            setFormData(prev => {
+                const newData = {
+                    ...prev,
+                    propertyIds: [...prev.propertyIds, propertyId]
+                };
+                console.log('UserAccessModal: New property data:', newData);
+                return newData;
+            });
+        } else {
+            setFormData(prev => {
+                const newData = {
+                    ...prev,
+                    propertyIds: prev.propertyIds.filter(id => id !== propertyId)
+                };
+                console.log('UserAccessModal: Removed property data:', newData);
+                return newData;
+            });
         }
     };
 
@@ -270,6 +393,27 @@ export const UserAccessModal: React.FC<UserAccessModalProps> = ({
                     </div>
 
                     <div style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                        {/* DEBUGGING: Show current form state */}
+                        {process.env.NODE_ENV === 'development' && (
+                            <div style={{
+                                background: '#f3f4f6',
+                                border: '1px solid #d1d5db',
+                                borderRadius: '0.75rem',
+                                padding: '1rem',
+                                fontSize: '0.75rem',
+                                fontFamily: 'monospace'
+                            }}>
+                                <strong>Debug Info:</strong><br />
+                                Role: {formData.role}<br />
+                                Status: {formData.status}<br />
+                                Entities: [{formData.entityIds.join(', ')}]<br />
+                                Properties: [{formData.propertyIds.join(', ')}]<br />
+                                Available Entities: {entities.length}<br />
+                                Available Properties: {properties.length}<br />
+                                Filtered Properties: {filteredProperties.length}
+                            </div>
+                        )}
+
                         {/* Error Messages */}
                         {errors.length > 0 && (
                             <div style={{
@@ -298,11 +442,14 @@ export const UserAccessModal: React.FC<UserAccessModalProps> = ({
                                 User Status
                             </label>
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.75rem' }}>
-                                {['ACTIVE', 'INACTIVE', 'PENDING'].map((status) => (
+                                {(['ACTIVE', 'INACTIVE', 'PENDING'] as const).map((status) => (
                                     <button
                                         key={status}
                                         type="button"
-                                        onClick={() => setFormData(prev => ({ ...prev, status }))}
+                                        onClick={() => {
+                                            console.log('UserAccessModal: Status changed to:', status);
+                                            setFormData(prev => ({ ...prev, status }));
+                                        }}
                                         style={{
                                             padding: '0.75rem',
                                             borderRadius: '0.75rem',
@@ -338,7 +485,7 @@ export const UserAccessModal: React.FC<UserAccessModalProps> = ({
                                     <button
                                         key={roleKey}
                                         type="button"
-                                        onClick={() => setFormData(prev => ({ ...prev, role: roleKey }))}
+                                        onClick={() => handleRoleChange(roleKey)} // FIXED: Use the proper handler
                                         disabled={!canEditRole(roleKey) && roleKey !== user.role}
                                         style={{
                                             width: '100%',
@@ -377,12 +524,12 @@ export const UserAccessModal: React.FC<UserAccessModalProps> = ({
                             </div>
                         </div>
 
-                        {/* Entity Access */}
+                        {/* Only show entity access for roles that support it */}
                         {['ENTITY_MANAGER', 'PROPERTY_MANAGER', 'ACCOUNTANT'].includes(formData.role) && (
                             <div>
                                 <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: '#374151', marginBottom: '0.75rem' }}>
                                     <Building2 style={{ width: '1rem', height: '1rem', display: 'inline', marginRight: '0.5rem' }} />
-                                    Entity Access
+                                    Entity Access ({entities.length} available)
                                 </label>
                                 <div style={{
                                     background: '#f9fafb',
@@ -410,22 +557,7 @@ export const UserAccessModal: React.FC<UserAccessModalProps> = ({
                                                 <input
                                                     type="checkbox"
                                                     checked={formData.entityIds.includes(entity.id)}
-                                                    onChange={(e) => {
-                                                        if (e.target.checked) {
-                                                            setFormData(prev => ({
-                                                                ...prev,
-                                                                entityIds: [...prev.entityIds, entity.id]
-                                                            }));
-                                                        } else {
-                                                            setFormData(prev => ({
-                                                                ...prev,
-                                                                entityIds: prev.entityIds.filter(id => id !== entity.id),
-                                                                propertyIds: prev.propertyIds.filter(pId =>
-                                                                    !properties.some(p => p.id === pId && p.entityId === entity.id)
-                                                                )
-                                                            }));
-                                                        }
-                                                    }}
+                                                    onChange={(e) => handleEntityChange(entity.id, e.target.checked)}
                                                     style={{
                                                         width: '1rem',
                                                         height: '1rem',
@@ -444,12 +576,12 @@ export const UserAccessModal: React.FC<UserAccessModalProps> = ({
                             </div>
                         )}
 
-                        {/* Property Access */}
+                        {/* Only show property access for PROPERTY_MANAGER role */}
                         {formData.role === 'PROPERTY_MANAGER' && filteredProperties.length > 0 && (
                             <div>
                                 <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: '#374151', marginBottom: '0.75rem' }}>
                                     <UserCheck style={{ width: '1rem', height: '1rem', display: 'inline', marginRight: '0.5rem' }} />
-                                    Property Access
+                                    Property Access ({filteredProperties.length} available)
                                 </label>
                                 <div style={{
                                     background: '#f9fafb',
@@ -477,19 +609,7 @@ export const UserAccessModal: React.FC<UserAccessModalProps> = ({
                                                 <input
                                                     type="checkbox"
                                                     checked={formData.propertyIds.includes(property.id)}
-                                                    onChange={(e) => {
-                                                        if (e.target.checked) {
-                                                            setFormData(prev => ({
-                                                                ...prev,
-                                                                propertyIds: [...prev.propertyIds, property.id]
-                                                            }));
-                                                        } else {
-                                                            setFormData(prev => ({
-                                                                ...prev,
-                                                                propertyIds: prev.propertyIds.filter(id => id !== property.id)
-                                                            }));
-                                                        }
-                                                    }}
+                                                    onChange={(e) => handlePropertyChange(property.id, e.target.checked)}
                                                     style={{
                                                         width: '1rem',
                                                         height: '1rem',
@@ -575,6 +695,16 @@ export const UserAccessModal: React.FC<UserAccessModalProps> = ({
                     </div>
                 </div>
             </div>
+
+            {/* Add CSS animations */}
+            <style>
+                {`
+                    @keyframes spin {
+                        0% { transform: rotate(0deg); }
+                        100% { transform: rotate(360deg); }
+                    }
+                `}
+            </style>
         </div>
     );
 };

@@ -82,6 +82,7 @@ class UserAccessService {
      * Get all users in organization for access management
      */
     async getOrganizationUsers(organizationId: string): Promise<UserAccessResponse> {
+        console.log('Getting users for org:', organizationId); // Add this
         return this.request<UserAccessResponse>(`/users/organization/${organizationId}`);
     }
 }
