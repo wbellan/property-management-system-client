@@ -596,6 +596,40 @@ const InviteUserModal: React.FC<{
         }
     }, [isOpen, token]);
 
+    // const handleSubmit = async (e: React.FormEvent) => {
+    //     e.preventDefault();
+    //     setLoading(true);
+
+    //     try {
+    //         if (token?.startsWith('demo-jwt-token')) {
+    //             await new Promise(resolve => setTimeout(resolve, 1000));
+    //             alert('Demo: Invitation would be sent to ' + formData.email);
+    //         } else {
+    //             await apiService.request('/users/invite', {
+    //                 method: 'POST',
+    //                 body: JSON.stringify(formData),
+    //             }, token);
+    //             alert('Invitation sent successfully!');
+    //         }
+
+    //         onSuccess();
+    //         onClose();
+    //         setFormData({
+    //             email: '',
+    //             firstName: '',
+    //             lastName: '',
+    //             role: 'PROPERTY_MANAGER',
+    //             entityIds: [],
+    //             propertyIds: [],
+    //         });
+    //     } catch (error) {
+    //         console.error('Failed to invite user:', error);
+    //         alert('Failed to send invitation. Please try again.');
+    //     } finally {
+    //         setLoading(false);
+    //     }
+    // };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
@@ -605,9 +639,15 @@ const InviteUserModal: React.FC<{
                 await new Promise(resolve => setTimeout(resolve, 1000));
                 alert('Demo: Invitation would be sent to ' + formData.email);
             } else {
-                await apiService.request('/users/invite', {
-                    method: 'POST',
-                    body: JSON.stringify(formData),
+                // Use the real invitation service
+                const { invitationService } = await import('../../services/api/invitationService');
+                await invitationService.inviteUser({
+                    email: formData.email,
+                    firstName: formData.firstName,
+                    lastName: formData.lastName,
+                    role: formData.role,
+                    entityIds: formData.entityIds,
+                    propertyIds: formData.propertyIds
                 }, token);
                 alert('Invitation sent successfully!');
             }
@@ -624,7 +664,7 @@ const InviteUserModal: React.FC<{
             });
         } catch (error) {
             console.error('Failed to invite user:', error);
-            alert('Failed to send invitation. Please try again.');
+            alert(error instanceof Error ? error.message : 'Failed to send invitation. Please try again.');
         } finally {
             setLoading(false);
         }

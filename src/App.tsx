@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { LoginPage } from './pages/auth/LoginPage';
 import { DashboardLayout } from './components/layout/DashboardLayout';
-import { ProtectedRoute } from './components/layout/ProtectedRoute';
+// import { ProtectedRoute } from './components/layout/ProtectedRoute';
 import { AcceptInvitationPage, SetupPage } from './pages/auth';
 
 import './index.css';
@@ -38,14 +38,15 @@ const AppRoutes: React.FC = () => {
       <Route
         path="/*"
         element={
-          <ProtectedRoute>
+          // <ProtectedRoute>
             <DashboardLayout />
-          </ProtectedRoute>
+          // </ProtectedRoute>
         }
       />
 
-      {/* DEFAULT ROUTE */}
-      <Route path="/" element={<Navigate to="/dashboard" replace />} />
+      {/* DEFAULT ROUTES */}
+      <Route path="/" element={<Navigate to="/dashboard" />} />
+      <Route path="*" element={<Navigate to="/dashboard" />} />
     </Routes>
   );
 };

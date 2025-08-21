@@ -1,168 +1,159 @@
+// src/pages/auth/AcceptInvitationPage.tsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Building2, CheckCircle, AlertCircle, Eye, EyeOff, ArrowRight } from 'lucide-react';
-import { apiService } from '../../services/api/apiService';
+import { Building2, Eye, EyeOff, CheckCircle, AlertCircle, Loader } from 'lucide-react';
+import { invitationService, type InvitationDetails } from '../../services/api/invitationService';
 
 export const AcceptInvitationPage: React.FC = () => {
-    const navigate = useNavigate();
     const [searchParams] = useSearchParams();
-    const [loading, setLoading] = useState(false);
+    const navigate = useNavigate();
+    const token = searchParams.get('token');
+
+    const [invitation, setInvitation] = useState<InvitationDetails | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [creating, setCreating] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [password, setPassword] = useState('');
-    const [confirmPassword, setConfirmPassword] = useState('');
+    const [success, setSuccess] = useState(false);
+
+    const [formData, setFormData] = useState({
+        password: '',
+        confirmPassword: ''
+    });
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-    const [success, setSuccess] = useState(false);
-    const [invitationDetails, setInvitationDetails] = useState<any>(null);
-    const [validatingToken, setValidatingToken] = useState(true);
-
-    const inviteToken = searchParams.get('token');
+    const [passwordErrors, setPasswordErrors] = useState<string[]>([]);
 
     useEffect(() => {
-        if (!inviteToken) {
-            setError('Invalid invitation link - no token provided');
-            setValidatingToken(false);
+        if (!token) {
+            setError('Invalid invitation link');
+            setLoading(false);
             return;
         }
 
-        validateInvitationToken();
-    }, [inviteToken]);
+        validateInvitation();
+    }, [token]);
 
-    const validateInvitationToken = async () => {
+    const validateInvitation = async () => {
         try {
-            setValidatingToken(true);
-            // Try to validate the token with the backend
-            const response = await apiService.request(`/users/validate-invitation/${inviteToken}`);
-
-            if (response.success) {
-                setInvitationDetails(response.data);
-            } else {
-                setError('Invalid or expired invitation link');
-            }
-        } catch (error: any) {
-            console.log('Token validation failed, assuming demo mode:', error);
-            // For demo purposes, accept any token that looks valid
-            if (inviteToken && inviteToken.length > 10) {
-                setInvitationDetails({
-                    email: 'demo@example.com',
-                    firstName: 'Demo',
-                    lastName: 'User',
-                    role: 'PROPERTY_MANAGER',
-                    organizationName: 'Demo Organization'
-                });
-            } else {
-                setError('Invalid invitation link format');
-            }
-        } finally {
-            setValidatingToken(false);
-        }
-    };
-
-    const validatePassword = (pwd: string): string | null => {
-        if (pwd.length < 8) {
-            return 'Password must be at least 8 characters long';
-        }
-        if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(pwd)) {
-            return 'Password must contain at least one uppercase letter, one lowercase letter, and one number';
-        }
-        return null;
-    };
-
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setError(null);
-
-        const passwordError = validatePassword(password);
-        if (passwordError) {
-            setError(passwordError);
-            return;
-        }
-
-        if (password !== confirmPassword) {
-            setError('Passwords do not match');
-            return;
-        }
-
-        setLoading(true);
-
-        try {
-            const response = await apiService.completeInvitation(inviteToken!, password);
-
-            if (response.success) {
-                setSuccess(true);
-                // Redirect after showing success message
-                setTimeout(() => {
-                    navigate('/login?invitation=completed&email=' + encodeURIComponent(response.data?.email || invitationDetails?.email || ''));
-                }, 3000);
-            } else {
-                throw new Error(response.error || 'Failed to complete invitation');
-            }
-        } catch (error: any) {
-            console.error('Failed to complete invitation:', error);
-
-            // For demo purposes, simulate success
-            if (inviteToken && password.length >= 8) {
-                setSuccess(true);
-                setTimeout(() => {
-                    navigate('/login?invitation=completed&email=' + encodeURIComponent(invitationDetails?.email || 'demo@example.com'));
-                }, 2000);
-            } else {
-                setError(error.message || 'Failed to complete invitation. The link may have expired.');
-            }
+            const response = await invitationService.validateInvitation(token!);
+            setInvitation(response.data);
+        } catch (err: any) {
+            setError(err.message || 'Invalid or expired invitation');
         } finally {
             setLoading(false);
         }
     };
 
-    if (validatingToken) {
+    const validatePassword = (password: string): string[] => {
+        const errors: string[] = [];
+
+        if (password.length < 8) {
+            errors.push('Password must be at least 8 characters long');
+        }
+        if (!/[A-Z]/.test(password)) {
+            errors.push('Password must contain at least one uppercase letter');
+        }
+        if (!/[a-z]/.test(password)) {
+            errors.push('Password must contain at least one lowercase letter');
+        }
+        if (!/\d/.test(password)) {
+            errors.push('Password must contain at least one number');
+        }
+        if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
+            errors.push('Password must contain at least one special character');
+        }
+
+        return errors;
+    };
+
+    const handlePasswordChange = (password: string) => {
+        setFormData(prev => ({ ...prev, password }));
+        setPasswordErrors(validatePassword(password));
+    };
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+
+        if (!token || !invitation) {
+            setError('Invalid invitation');
+            return;
+        }
+
+        if (formData.password !== formData.confirmPassword) {
+            setError('Passwords do not match');
+            return;
+        }
+
+        if (passwordErrors.length > 0) {
+            setError('Please fix password requirements');
+            return;
+        }
+
+        setCreating(true);
+        setError(null);
+
+        try {
+            await invitationService.completeInvitation({
+                token,
+                password: formData.password
+            });
+
+            setSuccess(true);
+
+            // Redirect to login after 3 seconds
+            setTimeout(() => {
+                navigate('/login', {
+                    state: {
+                        message: 'Account created successfully! Please log in with your new credentials.',
+                        email: invitation.email
+                    }
+                });
+            }, 3000);
+
+        } catch (err: any) {
+            setError(err.message || 'Failed to create account');
+        } finally {
+            setCreating(false);
+        }
+    };
+
+    const formatRole = (role: string) => {
+        const roleNames: Record<string, string> = {
+            'SUPER_ADMIN': 'Super Administrator',
+            'ORG_ADMIN': 'Organization Administrator',
+            'ENTITY_MANAGER': 'Entity Manager',
+            'PROPERTY_MANAGER': 'Property Manager',
+            'TENANT': 'Tenant',
+            'MAINTENANCE': 'Maintenance Staff',
+            'ACCOUNTANT': 'Accountant',
+        };
+        return roleNames[role] || role;
+    };
+
+    if (loading) {
         return (
-            <div className="min-h-screen bg-gradient flex items-center justify-center">
-                <div className="card" style={{ maxWidth: '28rem' }}>
-                    <div className="text-center">
-                        <div className="loading-spinner" style={{ margin: '0 auto 1rem auto' }}></div>
-                        <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold', color: 'var(--gray-900)', marginBottom: '0.5rem' }}>
-                            Validating Invitation
-                        </h2>
-                        <p style={{ color: 'var(--gray-600)' }}>
-                            Please wait while we verify your invitation link...
-                        </p>
-                    </div>
+            <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-cyan-50 flex items-center justify-center p-4">
+                <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/20 p-8 text-center">
+                    <Loader className="w-8 h-8 animate-spin text-indigo-600 mx-auto mb-4" />
+                    <p className="text-gray-600">Validating invitation...</p>
                 </div>
             </div>
         );
     }
 
-    if (error && !invitationDetails) {
+    if (error && !invitation) {
         return (
-            <div className="min-h-screen bg-gradient flex items-center justify-center">
-                <div className="card" style={{ maxWidth: '28rem' }}>
-                    <div className="text-center">
-                        <div style={{
-                            width: '5rem',
-                            height: '5rem',
-                            background: 'linear-gradient(135deg, #ef4444, #dc2626)',
-                            borderRadius: '1.5rem',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            margin: '0 auto 1.5rem auto',
-                            boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)'
-                        }}>
-                            <AlertCircle style={{ width: '2.5rem', height: '2.5rem', color: 'white' }} />
-                        </div>
-                        <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--gray-900)', marginBottom: '0.5rem' }}>
-                            Invalid Invitation
-                        </h2>
-                        <p style={{ color: 'var(--gray-600)', marginBottom: '1.5rem' }}>
-                            {error}
-                        </p>
-                        <button
-                            onClick={() => navigate('/login')}
-                            className="btn btn-primary"
-                        >
-                            Go to Login
-                        </button>
-                    </div>
+            <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-cyan-50 flex items-center justify-center p-4">
+                <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/20 p-8 text-center max-w-md">
+                    <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
+                    <h1 className="text-2xl font-bold text-gray-900 mb-4">Invalid Invitation</h1>
+                    <p className="text-gray-600 mb-6">{error}</p>
+                    <button
+                        onClick={() => navigate('/login')}
+                        className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-6 py-3 rounded-xl font-medium hover:from-indigo-600 hover:to-purple-700 transition-all"
+                    >
+                        Go to Login
+                    </button>
                 </div>
             </div>
         );
@@ -170,33 +161,15 @@ export const AcceptInvitationPage: React.FC = () => {
 
     if (success) {
         return (
-            <div className="min-h-screen bg-gradient flex items-center justify-center">
-                <div className="card" style={{ maxWidth: '28rem' }}>
-                    <div className="text-center">
-                        <div className="icon-container" style={{ background: 'linear-gradient(135deg, #10b981, #059669)' }}>
-                            <CheckCircle style={{ width: '2.5rem', height: '2.5rem' }} />
-                        </div>
-                        <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--gray-900)', marginBottom: '1rem' }}>
-                            Welcome to the Team! 🎉
-                        </h1>
-                        <p style={{ color: 'var(--gray-600)', marginBottom: '1.5rem' }}>
-                            Your account has been activated successfully. You can now sign in and start using PropFlow.
-                        </p>
-                        <div className="flex items-center justify-center space-x-2" style={{ color: '#059669', marginBottom: '1rem' }}>
-                            <div className="loading-spinner" style={{
-                                width: '1rem',
-                                height: '1rem',
-                                borderColor: '#bbf7d0',
-                                borderTopColor: '#059669'
-                            }}></div>
-                            <span style={{ fontSize: '0.875rem' }}>Redirecting to login...</span>
-                        </div>
-                        <button
-                            onClick={() => navigate('/login')}
-                            className="btn btn-secondary"
-                        >
-                            Go to login page now
-                        </button>
+            <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-cyan-50 flex items-center justify-center p-4">
+                <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/20 p-8 text-center max-w-md">
+                    <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
+                    <h1 className="text-2xl font-bold text-gray-900 mb-4">Account Created!</h1>
+                    <p className="text-gray-600 mb-6">
+                        Your account has been successfully created. You will be redirected to the login page shortly.
+                    </p>
+                    <div className="animate-pulse text-indigo-600">
+                        Redirecting to login...
                     </div>
                 </div>
             </div>
@@ -204,184 +177,142 @@ export const AcceptInvitationPage: React.FC = () => {
     }
 
     return (
-        <div className="min-h-screen bg-gradient flex items-center justify-center" style={{ padding: '1rem' }}>
-            <div className="w-full" style={{ maxWidth: '28rem' }}>
-                <div className="card">
-                    <div className="text-center mb-8">
-                        <div className="icon-container">
-                            <Building2 style={{ width: '2.5rem', height: '2.5rem' }} />
+        <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-cyan-50 flex items-center justify-center p-4">
+            <div className="w-full max-w-lg">
+                <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/20 overflow-hidden">
+                    <div className="p-8">
+                        {/* Header */}
+                        <div className="text-center mb-8">
+                            <div className="w-20 h-20 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 rounded-3xl mx-auto mb-6 flex items-center justify-center shadow-lg">
+                                <Building2 className="w-10 h-10 text-white" />
+                            </div>
+                            <h1 className="text-3xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent mb-2">
+                                Complete Your Invitation
+                            </h1>
+                            <p className="text-gray-600">Set up your account to get started</p>
                         </div>
-                        <h1 className="title">Complete Your Invitation</h1>
-                        <p className="subtitle">Set your password to activate your PropFlow account</p>
 
-                        {invitationDetails && (
-                            <div style={{
-                                background: 'rgba(59, 130, 246, 0.1)',
-                                border: '1px solid rgba(59, 130, 246, 0.2)',
-                                borderRadius: '0.75rem',
-                                padding: '1rem',
-                                marginTop: '1rem'
-                            }}>
-                                <h4 style={{ fontSize: '0.875rem', fontWeight: 600, color: '#1e40af', marginBottom: '0.5rem' }}>
-                                    Invitation Details
-                                </h4>
-                                <div style={{ fontSize: '0.75rem', color: '#1d4ed8' }}>
-                                    <p><strong>Email:</strong> {invitationDetails.email}</p>
-                                    <p><strong>Role:</strong> {invitationDetails.role?.replace('_', ' ')}</p>
-                                    <p><strong>Organization:</strong> {invitationDetails.organizationName}</p>
+                        {/* Invitation Details */}
+                        {invitation && (
+                            <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-2xl p-6 mb-8">
+                                <h3 className="text-lg font-semibold text-gray-900 mb-3">Invitation Details</h3>
+                                <div className="space-y-2 text-sm">
+                                    <div><strong>Name:</strong> {invitation.firstName} {invitation.lastName}</div>
+                                    <div><strong>Email:</strong> {invitation.email}</div>
+                                    <div><strong>Organization:</strong> {invitation.organizationName}</div>
+                                    <div><strong>Role:</strong>
+                                        <span className="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+                                            {formatRole(invitation.role)}
+                                        </span>
+                                    </div>
+                                    <div><strong>Expires:</strong> {new Date(invitation.expiresAt).toLocaleDateString()}</div>
                                 </div>
                             </div>
                         )}
+
+                        {/* Password Form */}
+                        <form onSubmit={handleSubmit} className="space-y-6">
+                            <div className="space-y-2">
+                                <label className="text-sm font-semibold text-gray-700">Create Password</label>
+                                <div className="relative">
+                                    <input
+                                        type={showPassword ? "text" : "password"}
+                                        value={formData.password}
+                                        onChange={(e) => handlePasswordChange(e.target.value)}
+                                        className="w-full px-4 py-4 bg-gray-50/50 border-0 rounded-2xl focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all placeholder-gray-400 pr-12"
+                                        placeholder="Enter secure password"
+                                        required
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowPassword(!showPassword)}
+                                        className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                                    >
+                                        {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                                    </button>
+                                </div>
+
+                                {/* Password Requirements */}
+                                {formData.password && (
+                                    <div className="mt-2 space-y-1">
+                                        {passwordErrors.map((error, index) => (
+                                            <div key={index} className="flex items-center text-xs text-red-600">
+                                                <AlertCircle className="w-3 h-3 mr-1" />
+                                                {error}
+                                            </div>
+                                        ))}
+                                        {passwordErrors.length === 0 && (
+                                            <div className="flex items-center text-xs text-green-600">
+                                                <CheckCircle className="w-3 h-3 mr-1" />
+                                                Password meets all requirements
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-sm font-semibold text-gray-700">Confirm Password</label>
+                                <div className="relative">
+                                    <input
+                                        type={showConfirmPassword ? "text" : "password"}
+                                        value={formData.confirmPassword}
+                                        onChange={(e) => setFormData(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                                        className="w-full px-4 py-4 bg-gray-50/50 border-0 rounded-2xl focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all placeholder-gray-400 pr-12"
+                                        placeholder="Confirm your password"
+                                        required
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                        className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                                    >
+                                        {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                                    </button>
+                                </div>
+
+                                {formData.confirmPassword && formData.password !== formData.confirmPassword && (
+                                    <div className="flex items-center text-xs text-red-600 mt-1">
+                                        <AlertCircle className="w-3 h-3 mr-1" />
+                                        Passwords do not match
+                                    </div>
+                                )}
+                            </div>
+
+                            {error && (
+                                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-2xl">
+                                    {error}
+                                </div>
+                            )}
+
+                            <button
+                                type="submit"
+                                disabled={creating || passwordErrors.length > 0 || formData.password !== formData.confirmPassword}
+                                className="w-full bg-gradient-to-r from-indigo-500 to-purple-600 text-white py-4 rounded-2xl font-semibold hover:from-indigo-600 hover:to-purple-700 transition-all transform hover:scale-[1.02] shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                {creating ? (
+                                    <div className="flex items-center justify-center">
+                                        <Loader className="w-5 h-5 animate-spin mr-2" />
+                                        Creating Account...
+                                    </div>
+                                ) : (
+                                    'Create Account'
+                                )}
+                            </button>
+                        </form>
                     </div>
 
-                    {error && (
-                        <div className="error-message mb-6" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            <AlertCircle style={{ width: '1.25rem', height: '1.25rem', flexShrink: 0 }} />
-                            <span style={{ fontSize: '0.875rem' }}>{error}</span>
-                        </div>
-                    )}
-
-                    <form onSubmit={handleSubmit} className="space-y-6">
-                        <div>
-                            <label className="form-label">Create Password</label>
-                            <div style={{ position: 'relative' }}>
-                                <input
-                                    type={showPassword ? "text" : "password"}
-                                    required
-                                    minLength={8}
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
-                                    className="form-input"
-                                    style={{ paddingRight: '3rem' }}
-                                    placeholder="Choose a strong password"
-                                />
-                                <button
-                                    type="button"
-                                    onClick={() => setShowPassword(!showPassword)}
-                                    className="password-toggle"
-                                >
-                                    {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                                </button>
-                            </div>
-                            <div style={{ marginTop: '0.5rem' }}>
-                                <p style={{ fontSize: '0.75rem', color: 'var(--gray-500)' }}>Password requirements:</p>
-                                <ul style={{ fontSize: '0.75rem', color: 'var(--gray-500)', margin: '0.25rem 0 0 1rem', padding: 0 }}>
-                                    <li style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        color: password.length >= 8 ? '#059669' : 'var(--gray-500)'
-                                    }}>
-                                        <div style={{
-                                            width: '0.25rem',
-                                            height: '0.25rem',
-                                            borderRadius: '50%',
-                                            marginRight: '0.5rem',
-                                            background: password.length >= 8 ? '#10b981' : '#d1d5db'
-                                        }}></div>
-                                        At least 8 characters long
-                                    </li>
-                                    <li style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        color: /(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(password) ? '#059669' : 'var(--gray-500)'
-                                    }}>
-                                        <div style={{
-                                            width: '0.25rem',
-                                            height: '0.25rem',
-                                            borderRadius: '50%',
-                                            marginRight: '0.5rem',
-                                            background: /(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(password) ? '#10b981' : '#d1d5db'
-                                        }}></div>
-                                        Include uppercase, lowercase, and number
-                                    </li>
-                                </ul>
-                            </div>
-                        </div>
-
-                        <div>
-                            <label className="form-label">Confirm Password</label>
-                            <div style={{ position: 'relative' }}>
-                                <input
-                                    type={showConfirmPassword ? "text" : "password"}
-                                    required
-                                    value={confirmPassword}
-                                    onChange={(e) => setConfirmPassword(e.target.value)}
-                                    className="form-input"
-                                    style={{ paddingRight: '3rem' }}
-                                    placeholder="Confirm your password"
-                                />
-                                <button
-                                    type="button"
-                                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                                    className="password-toggle"
-                                >
-                                    {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                                </button>
-                            </div>
-                            {confirmPassword && password !== confirmPassword && (
-                                <p style={{ fontSize: '0.75rem', color: '#dc2626', marginTop: '0.25rem' }}>
-                                    Passwords do not match
-                                </p>
-                            )}
-                        </div>
-
-                        <button
-                            type="submit"
-                            disabled={loading || !password || password !== confirmPassword || validatePassword(password) !== null}
-                            className={`btn btn-primary ${loading ? 'btn-loading' : ''}`}
-                            style={{
-                                opacity: (loading || !password || password !== confirmPassword || validatePassword(password) !== null) ? 0.5 : 1,
-                                cursor: (loading || !password || password !== confirmPassword || validatePassword(password) !== null) ? 'not-allowed' : 'pointer'
-                            }}
-                        >
-                            {loading ? (
-                                <>
-                                    <div className="loading-spinner" style={{
-                                        width: '1.25rem',
-                                        height: '1.25rem',
-                                        marginRight: '0.5rem',
-                                        borderWidth: '2px'
-                                    }}></div>
-                                    Activating Account...
-                                </>
-                            ) : (
-                                <>
-                                    Activate Account
-                                    <ArrowRight style={{ width: '1rem', height: '1rem', marginLeft: '0.5rem' }} />
-                                </>
-                            )}
-                        </button>
-                    </form>
-
-                    <div style={{ marginTop: '1.5rem', paddingTop: '1.5rem', borderTop: '1px solid var(--gray-100)' }}>
-                        <div style={{
-                            background: 'rgba(59, 130, 246, 0.1)',
-                            border: '1px solid rgba(59, 130, 246, 0.2)',
-                            borderRadius: '0.75rem',
-                            padding: '1rem'
-                        }}>
-                            <h4 style={{ fontWeight: 500, color: '#1e40af', marginBottom: '0.5rem' }}>What's Next?</h4>
-                            <p style={{ fontSize: '0.875rem', color: '#1d4ed8' }}>
-                                After activating your account, you'll be able to sign in and access your assigned
-                                areas of the PropFlow system. Your role and permissions have been configured by your administrator.
-                            </p>
-                        </div>
+                    <div className="px-8 py-6 bg-gradient-to-r from-gray-50 to-gray-100">
+                        <p className="text-center text-sm text-gray-500">
+                            Already have an account?{' '}
+                            <button
+                                onClick={() => navigate('/login')}
+                                className="text-indigo-600 hover:text-indigo-700 font-medium"
+                            >
+                                Sign in here
+                            </button>
+                        </p>
                     </div>
-                </div>
-
-                {/* Help Text */}
-                <div className="text-center" style={{ marginTop: '2rem' }}>
-                    <p style={{ color: 'var(--gray-600)', fontSize: '0.875rem' }}>
-                        Need help?{' '}
-                        <a
-                            href="mailto:support@propflow.com"
-                            style={{ color: 'var(--indigo-600)', fontWeight: 500, textDecoration: 'none' }}
-                            onMouseEnter={(e) => e.target.style.color = 'var(--indigo-700)'}
-                            onMouseLeave={(e) => e.target.style.color = 'var(--indigo-600)'}
-                        >
-                            Contact Support
-                        </a>
-                    </p>
                 </div>
             </div>
         </div>

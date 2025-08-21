@@ -241,19 +241,19 @@ class ApiService {
     return this.request(`/users/organization/${organizationId}`, {}, token);
   }
 
-  async inviteUser(data: any, token?: string): Promise<ApiResponse> {
-    return this.request('/users/invite', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    }, token);
-  }
+  // async inviteUser(data: any, token?: string): Promise<ApiResponse> {
+  //   return this.request('/users/invite', {
+  //     method: 'POST',
+  //     body: JSON.stringify(data),
+  //   }, token);
+  // }
 
-  async completeInvitation(inviteToken: string, password: string): Promise<ApiResponse> {
-    return this.request('/users/complete-invitation', {
-      method: 'POST',
-      body: JSON.stringify({ inviteToken, password }),
-    });
-  }
+  // async completeInvitation(inviteToken: string, password: string): Promise<ApiResponse> {
+  //   return this.request('/users/complete-invitation', {
+  //     method: 'POST',
+  //     body: JSON.stringify({ inviteToken, password }),
+  //   });
+  // }
 
   async setupOrganization(data: any): Promise<ApiResponse> {
     return this.request('/users/setup-organization', {
@@ -262,11 +262,11 @@ class ApiService {
     });
   }
 
-  async resendInvitation(userId: string, token?: string): Promise<ApiResponse> {
-    return this.request(`/users/${userId}/resend-invitation`, {
-      method: 'POST',
-    }, token);
-  }
+  // async resendInvitation(userId: string, token?: string): Promise<ApiResponse> {
+  //   return this.request(`/users/${userId}/resend-invitation`, {
+  //     method: 'POST',
+  //   }, token);
+  // }
 
   async getAccessOptions(organizationId: string, token?: string): Promise<ApiResponse> {
     return this.request(`/users/access-options/${organizationId}`, {}, token);
