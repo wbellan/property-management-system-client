@@ -1,10 +1,10 @@
 import React from 'react';
-import { 
-  LayoutDashboard, 
-  DollarSign, 
-  Home, 
-  TrendingUp, 
-  FileText, 
+import {
+  LayoutDashboard,
+  DollarSign,
+  Home,
+  TrendingUp,
+  FileText,
   Wrench,
   Download,
   Calendar,
@@ -22,45 +22,45 @@ interface ReportsContentProps {
 }
 
 const reportTypes = [
-  { 
-    id: 'dashboard', 
-    label: 'Dashboard Metrics', 
-    icon: LayoutDashboard, 
+  {
+    id: 'dashboard',
+    label: 'Dashboard Metrics',
+    icon: LayoutDashboard,
     color: 'from-blue-500 to-cyan-500',
     description: 'Key performance indicators overview'
   },
-  { 
-    id: 'profit-loss', 
-    label: 'P&L Statement', 
-    icon: DollarSign, 
+  {
+    id: 'profit-loss',
+    label: 'P&L Statement',
+    icon: DollarSign,
     color: 'from-green-500 to-emerald-500',
     description: 'Profit and loss analysis'
   },
-  { 
-    id: 'occupancy', 
-    label: 'Occupancy Analytics', 
-    icon: Home, 
+  {
+    id: 'occupancy',
+    label: 'Occupancy Analytics',
+    icon: Home,
     color: 'from-purple-500 to-pink-500',
     description: 'Vacancy and occupancy trends'
   },
-  { 
-    id: 'cash-flow', 
-    label: 'Cash Flow Analysis', 
-    icon: TrendingUp, 
+  {
+    id: 'cash-flow',
+    label: 'Cash Flow Analysis',
+    icon: TrendingUp,
     color: 'from-orange-500 to-red-500',
     description: 'Income and expense flow'
   },
-  { 
-    id: 'rent-roll', 
-    label: 'Rent Roll', 
-    icon: FileText, 
+  {
+    id: 'rent-roll',
+    label: 'Rent Roll',
+    icon: FileText,
     color: 'from-indigo-500 to-purple-500',
     description: 'Current rent schedule'
   },
-  { 
-    id: 'maintenance', 
-    label: 'Maintenance Analytics', 
-    icon: Wrench, 
+  {
+    id: 'maintenance',
+    label: 'Maintenance Analytics',
+    icon: Wrench,
     color: 'from-yellow-500 to-orange-500',
     description: 'Maintenance costs and trends'
   }
@@ -235,15 +235,18 @@ export const ReportsContent: React.FC<ReportsContentProps> = ({
 
   return (
     <div className="reports-container">
-      <div className="reports-header">
+      {/* Header matching MaintenanceContent structure exactly */}
+      <div className="maintenance-header">
         <div>
-          <h1 className="reports-title">Analytics & Reports</h1>
-          <p className="reports-subtitle">Comprehensive business intelligence and reporting</p>
+          <h1 className="properties-title">Analytics & Reports</h1>
+          <p className="properties-subtitle">Comprehensive business intelligence and reporting</p>
         </div>
-        <button className="btn btn-primary">
-          <Download size={16} />
-          Export Report
-        </button>
+        <div className="maintenance-actions">
+          <button className="btn btn-primary">
+            <Download style={{ width: '1rem', height: '1rem', marginRight: '0.5rem' }} />
+            Export Report
+          </button>
+        </div>
       </div>
 
       {/* Report Type Selector */}
@@ -284,7 +287,7 @@ export const ReportsContent: React.FC<ReportsContentProps> = ({
             </button>
           </div>
         </div>
-        
+
         <div className="report-content-body">
           {renderReportContent()}
         </div>

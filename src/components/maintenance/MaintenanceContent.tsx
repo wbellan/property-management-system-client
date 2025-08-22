@@ -1,27 +1,5 @@
 import React, { useState } from 'react';
-import { 
-  Plus, 
-  Search, 
-  Filter, 
-  Wrench, 
-  Calendar, 
-  DollarSign,
-  AlertCircle,
-  CheckCircle,
-  Clock,
-  User,
-  MapPin,
-  FileText,
-  Camera,
-  Edit,
-  Eye,
-  AlertTriangle,
-  Zap,
-  Droplets,
-  Wind,
-  Cpu,
-  Home
-} from 'lucide-react';
+import { Wrench, Plus, Search, Filter, Calendar, DollarSign, User, Clock, AlertCircle, CheckCircle, PlayCircle, PauseCircle } from 'lucide-react';
 
 interface MaintenanceRequest {
   id: string;
@@ -49,216 +27,14 @@ interface MaintenanceContentProps {
   onRefresh: () => void;
 }
 
-export const MaintenanceContent: React.FC<MaintenanceContentProps> = ({ 
-  requests, 
-  loading, 
-  onRefresh 
+export const MaintenanceContent: React.FC<MaintenanceContentProps> = ({
+  requests,
+  loading,
+  onRefresh
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [priorityFilter, setPriorityFilter] = useState<string>('all');
-  const [categoryFilter, setCategoryFilter] = useState<string>('all');
-
-  const filteredRequests = requests.filter(request => {
-    const matchesSearch = 
-      request.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      request.propertyName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      request.tenantName.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesStatus = statusFilter === 'all' || request.status === statusFilter;
-    const matchesPriority = priorityFilter === 'all' || request.priority === priorityFilter;
-    const matchesCategory = categoryFilter === 'all' || request.category === categoryFilter;
-    
-    return matchesSearch && matchesStatus && matchesPriority && matchesCategory;
-  });
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'open': return 'maintenance-status-open';
-      case 'in-progress': return 'maintenance-status-in-progress';
-      case 'completed': return 'maintenance-status-completed';
-      case 'on-hold': return 'maintenance-status-on-hold';
-      default: return 'maintenance-status-open';
-    }
-  };
-
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'low': return 'priority-low';
-      case 'medium': return 'priority-medium';
-      case 'high': return 'priority-high';
-      case 'urgent': return 'priority-urgent';
-      default: return 'priority-medium';
-    }
-  };
-
-  const getCategoryIcon = (category: string) => {
-    switch (category) {
-      case 'plumbing': return <Droplets size={16} />;
-      case 'electrical': return <Zap size={16} />;
-      case 'hvac': return <Wind size={16} />;
-      case 'appliance': return <Cpu size={16} />;
-      case 'general': return <Home size={16} />;
-      case 'emergency': return <AlertTriangle size={16} />;
-      default: return <Wrench size={16} />;
-    }
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric'
-    });
-  };
-
-  const getDaysOverdue = (dueDate: string, status: string) => {
-    if (status === 'completed') return 0;
-    const today = new Date();
-    const due = new Date(dueDate);
-    const diffTime = today.getTime() - due.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays > 0 ? diffDays : 0;
-  };
-
-  const MaintenanceCard: React.FC<{ request: MaintenanceRequest }> = ({ request }) => {
-    const daysOverdue = getDaysOverdue(request.dueDate, request.status);
-    
-    return (
-      <div className="maintenance-card">
-        <div className="maintenance-card-header">
-          <div className="maintenance-info">
-            <div className="maintenance-icon">
-              {getCategoryIcon(request.category)}
-            </div>
-            <div>
-              <h3 className="maintenance-title">{request.title}</h3>
-              <p className="maintenance-location">
-                <MapPin size={14} />
-                {request.propertyName} - {request.unitNumber}
-              </p>
-              <p className="maintenance-tenant">Tenant: {request.tenantName}</p>
-            </div>
-          </div>
-          <div className="maintenance-badges">
-            <span className={`maintenance-status ${getStatusColor(request.status)}`}>
-              {request.status === 'open' && <AlertCircle size={14} />}
-              {request.status === 'in-progress' && <Clock size={14} />}
-              {request.status === 'completed' && <CheckCircle size={14} />}
-              {request.status === 'on-hold' && <AlertTriangle size={14} />}
-              {request.status.replace('-', ' ').toUpperCase()}
-            </span>
-            <span className={`maintenance-priority ${getPriorityColor(request.priority)}`}>
-              {request.priority.toUpperCase()}
-            </span>
-          </div>
-        </div>
-
-        <div className="maintenance-description">
-          <p>{request.description}</p>
-        </div>
-
-        <div className="maintenance-details">
-          <div className="detail-row">
-            <div className="detail-item">
-              <Calendar size={16} />
-              <div>
-                <span className="detail-label">Created</span>
-                <span className="detail-value">{formatDate(request.createdDate)}</span>
-              </div>
-            </div>
-            <div className="detail-item">
-              <Calendar size={16} />
-              <div>
-                <span className="detail-label">Due Date</span>
-                <span className={`detail-value ${daysOverdue > 0 ? 'overdue' : ''}`}>
-                  {formatDate(request.dueDate)}
-                  {daysOverdue > 0 && <span className="overdue-text">({daysOverdue} days overdue)</span>}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <div className="detail-row">
-            <div className="detail-item">
-              <DollarSign size={16} />
-              <div>
-                <span className="detail-label">Estimated Cost</span>
-                <span className="detail-value">${request.estimatedCost}</span>
-              </div>
-            </div>
-            {request.actualCost && (
-              <div className="detail-item">
-                <DollarSign size={16} />
-                <div>
-                  <span className="detail-label">Actual Cost</span>
-                  <span className="detail-value">${request.actualCost}</span>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {request.assignedTo && (
-            <div className="detail-row">
-              <div className="detail-item">
-                <User size={16} />
-                <div>
-                  <span className="detail-label">Assigned To</span>
-                  <span className="detail-value">{request.assignedTo}</span>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {request.completedDate && (
-            <div className="detail-row">
-              <div className="detail-item">
-                <CheckCircle size={16} />
-                <div>
-                  <span className="detail-label">Completed</span>
-                  <span className="detail-value">{formatDate(request.completedDate)}</span>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-
-        <div className="maintenance-meta">
-          <div className="meta-item">
-            <Camera size={16} />
-            <span>{request.images.length} photos</span>
-          </div>
-          <div className="meta-item">
-            <FileText size={16} />
-            <span>{request.notes.length} notes</span>
-          </div>
-        </div>
-
-        <div className="maintenance-card-footer">
-          <button className="maintenance-action-btn">
-            <Eye size={16} />
-            View
-          </button>
-          <button className="maintenance-action-btn">
-            <Edit size={16} />
-            Edit
-          </button>
-          {request.status === 'open' && (
-            <button className="maintenance-action-btn maintenance-action-primary">
-              <User size={16} />
-              Assign
-            </button>
-          )}
-          {request.status === 'in-progress' && (
-            <button className="maintenance-action-btn maintenance-action-success">
-              <CheckCircle size={16} />
-              Complete
-            </button>
-          )}
-        </div>
-      </div>
-    );
-  };
+  const [selectedStatus, setSelectedStatus] = useState('all');
+  const [selectedPriority, setSelectedPriority] = useState('all');
 
   if (loading) {
     return (
@@ -269,43 +45,93 @@ export const MaintenanceContent: React.FC<MaintenanceContentProps> = ({
     );
   }
 
+  const filteredRequests = requests.filter(request => {
+    const matchesSearch =
+      request.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      request.propertyName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      request.tenantName.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = selectedStatus === 'all' || request.status === selectedStatus;
+    const matchesPriority = selectedPriority === 'all' || request.priority === selectedPriority;
+    return matchesSearch && matchesStatus && matchesPriority;
+  });
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'open': return AlertCircle;
+      case 'in-progress': return PlayCircle;
+      case 'completed': return CheckCircle;
+      case 'on-hold': return PauseCircle;
+      default: return AlertCircle;
+    }
+  };
+
+  const getCategoryColor = (category: string) => {
+    const colors = {
+      plumbing: 'from-blue-500 to-cyan-500',
+      electrical: 'from-yellow-500 to-orange-500',
+      hvac: 'from-green-500 to-emerald-500',
+      appliance: 'from-purple-500 to-pink-500',
+      general: 'from-gray-500 to-gray-600',
+      emergency: 'from-red-500 to-pink-500'
+    };
+    return colors[category as keyof typeof colors] || 'from-gray-500 to-gray-600';
+  };
+
+  const getOverdueStatus = (dueDate: string, status: string) => {
+    if (status === 'completed') return false;
+    const due = new Date(dueDate);
+    const today = new Date();
+    return due < today;
+  };
+
+  // Calculate statistics
+  const stats = {
+    total: requests.length,
+    open: requests.filter(r => r.status === 'open').length,
+    inProgress: requests.filter(r => r.status === 'in-progress').length,
+    completed: requests.filter(r => r.status === 'completed').length,
+    urgent: requests.filter(r => r.priority === 'urgent').length
+  };
+
   return (
     <div className="maintenance-container">
+      {/* Header with proper title styling to match other pages */}
       <div className="maintenance-header">
         <div>
-          <h1 className="maintenance-title">Maintenance Management</h1>
-          <p className="maintenance-subtitle">Track work orders, assignments, and completion status</p>
+          <h1 className="properties-title">Maintenance Management</h1>
+          <p className="properties-subtitle">Track work orders, assignments, and completion status</p>
         </div>
         <div className="maintenance-actions">
           <button className="btn btn-secondary">
-            <Filter size={16} />
-            Advanced Filter
+            <Filter style={{ width: '1rem', height: '1rem', marginRight: '0.5rem' }} />
+            Filter
           </button>
           <button className="btn btn-primary">
-            <Plus size={16} />
+            <Plus style={{ width: '1rem', height: '1rem', marginRight: '0.5rem' }} />
             New Request
           </button>
         </div>
       </div>
 
+      {/* Search and Filter Toolbar */}
       <div className="maintenance-toolbar">
         <div className="search-container">
-          <Search size={20} className="search-icon" />
+          <Search className="search-icon" />
           <input
             type="text"
-            placeholder="Search maintenance requests..."
+            placeholder="Search requests by title, property, or tenant..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="search-input"
           />
         </div>
-        
+
         <div className="filter-controls">
           <div className="filter-group">
-            <label className="filter-label">Status:</label>
-            <select 
-              value={statusFilter} 
-              onChange={(e) => setStatusFilter(e.target.value)}
+            <label className="filter-label">Status</label>
+            <select
+              value={selectedStatus}
+              onChange={(e) => setSelectedStatus(e.target.value)}
               className="filter-select"
             >
               <option value="all">All Status</option>
@@ -315,12 +141,12 @@ export const MaintenanceContent: React.FC<MaintenanceContentProps> = ({
               <option value="on-hold">On Hold</option>
             </select>
           </div>
-          
+
           <div className="filter-group">
-            <label className="filter-label">Priority:</label>
-            <select 
-              value={priorityFilter} 
-              onChange={(e) => setPriorityFilter(e.target.value)}
+            <label className="filter-label">Priority</label>
+            <select
+              value={selectedPriority}
+              onChange={(e) => setSelectedPriority(e.target.value)}
               className="filter-select"
             >
               <option value="all">All Priority</option>
@@ -330,95 +156,186 @@ export const MaintenanceContent: React.FC<MaintenanceContentProps> = ({
               <option value="low">Low</option>
             </select>
           </div>
+        </div>
 
-          <div className="filter-group">
-            <label className="filter-label">Category:</label>
-            <select 
-              value={categoryFilter} 
-              onChange={(e) => setCategoryFilter(e.target.value)}
-              className="filter-select"
-            >
-              <option value="all">All Categories</option>
-              <option value="plumbing">Plumbing</option>
-              <option value="electrical">Electrical</option>
-              <option value="hvac">HVAC</option>
-              <option value="appliance">Appliance</option>
-              <option value="general">General</option>
-              <option value="emergency">Emergency</option>
-            </select>
+        <span className="maintenance-count">
+          {filteredRequests.length} of {requests.length} requests
+        </span>
+      </div>
+
+      {/* Statistics */}
+      <div className="maintenance-stats">
+        <div className="stat-item">
+          <div className="stat-icon stat-icon-blue">
+            <Wrench size={20} />
+          </div>
+          <div>
+            <div className="stat-number">{stats.total}</div>
+            <div className="stat-label">Total Requests</div>
           </div>
         </div>
 
-        <div className="maintenance-count">
-          {filteredRequests.length} {filteredRequests.length === 1 ? 'request' : 'requests'}
-        </div>
-      </div>
-
-      {/* Summary Stats */}
-      <div className="maintenance-stats">
         <div className="stat-item">
           <div className="stat-icon stat-icon-red">
             <AlertCircle size={20} />
           </div>
           <div>
-            <div className="stat-number">{requests.filter(r => r.status === 'open').length}</div>
-            <div className="stat-label">Open Requests</div>
+            <div className="stat-number">{stats.open}</div>
+            <div className="stat-label">Open</div>
           </div>
         </div>
+
         <div className="stat-item">
           <div className="stat-icon stat-icon-blue">
-            <Clock size={20} />
+            <PlayCircle size={20} />
           </div>
           <div>
-            <div className="stat-number">{requests.filter(r => r.status === 'in-progress').length}</div>
+            <div className="stat-number">{stats.inProgress}</div>
             <div className="stat-label">In Progress</div>
           </div>
         </div>
-        <div className="stat-item">
-          <div className="stat-icon stat-icon-orange">
-            <AlertTriangle size={20} />
-          </div>
-          <div>
-            <div className="stat-number">{requests.filter(r => r.priority === 'urgent' && r.status !== 'completed').length}</div>
-            <div className="stat-label">Urgent Priority</div>
-          </div>
-        </div>
+
         <div className="stat-item">
           <div className="stat-icon stat-icon-green">
-            <DollarSign size={20} />
+            <CheckCircle size={20} />
           </div>
           <div>
-            <div className="stat-number">${requests.filter(r => r.actualCost).reduce((sum, r) => sum + (r.actualCost || 0), 0).toLocaleString()}</div>
-            <div className="stat-label">Total Spent</div>
+            <div className="stat-number">{stats.completed}</div>
+            <div className="stat-label">Completed</div>
           </div>
         </div>
       </div>
 
+      {/* Maintenance Requests Grid */}
       {filteredRequests.length === 0 ? (
         <div className="maintenance-empty">
-          <Wrench size={64} className="empty-icon" />
-          <h3 className="empty-title">
-            {searchTerm || statusFilter !== 'all' || priorityFilter !== 'all' || categoryFilter !== 'all' 
-              ? 'No maintenance requests found' 
-              : 'No maintenance requests yet'}
-          </h3>
+          <Wrench className="empty-icon" size={64} />
+          <h3 className="empty-title">No maintenance requests found</h3>
           <p className="empty-subtitle">
-            {searchTerm || statusFilter !== 'all' || priorityFilter !== 'all' || categoryFilter !== 'all'
-              ? 'Try adjusting your search or filter criteria' 
-              : 'Get started by creating your first maintenance request.'}
+            {searchTerm || selectedStatus !== 'all' || selectedPriority !== 'all'
+              ? 'Try adjusting your search filters or create a new request.'
+              : 'Create your first maintenance request to get started.'
+            }
           </p>
-          {!searchTerm && statusFilter === 'all' && priorityFilter === 'all' && categoryFilter === 'all' && (
-            <button className="btn btn-primary">
-              <Plus size={16} />
-              Create First Request
-            </button>
-          )}
+          <button className="btn btn-primary">
+            <Plus style={{ width: '1rem', height: '1rem', marginRight: '0.5rem' }} />
+            New Request
+          </button>
         </div>
       ) : (
         <div className="maintenance-grid">
-          {filteredRequests.map((request) => (
-            <MaintenanceCard key={request.id} request={request} />
-          ))}
+          {filteredRequests.map((request) => {
+            const StatusIcon = getStatusIcon(request.status);
+            const isOverdue = getOverdueStatus(request.dueDate, request.status);
+
+            return (
+              <div key={request.id} className="maintenance-card">
+                <div className="maintenance-card-header">
+                  <div className="maintenance-info">
+                    <div className={`maintenance-icon bg-gradient-to-r ${getCategoryColor(request.category)}`}>
+                      <Wrench size={20} />
+                    </div>
+                    <div>
+                      <h3 className="maintenance-title">{request.title}</h3>
+                      <div className="maintenance-location">
+                        <span>{request.propertyName}</span>
+                        {request.unitNumber && <span> • {request.unitNumber}</span>}
+                      </div>
+                      <div className="maintenance-tenant">
+                        Requested by: {request.tenantName}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="maintenance-badges">
+                    <span className={`maintenance-status maintenance-status-${request.status}`}>
+                      <StatusIcon size={12} />
+                      {request.status.replace('-', ' ')}
+                    </span>
+                    <span className={`maintenance-priority priority-${request.priority}`}>
+                      {request.priority}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="maintenance-description">
+                  {request.description}
+                </div>
+
+                <div className="maintenance-details">
+                  <div className="detail-row">
+                    <div className="detail-item">
+                      <Calendar size={16} />
+                      <div>
+                        <span className="detail-label">Due Date</span>
+                        <span className={`detail-value ${isOverdue ? 'overdue' : ''}`}>
+                          {new Date(request.dueDate).toLocaleDateString()}
+                          {isOverdue && <span className="overdue-text">Overdue</span>}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="detail-item">
+                      <DollarSign size={16} />
+                      <div>
+                        <span className="detail-label">Estimated Cost</span>
+                        <span className="detail-value">${request.estimatedCost}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {request.assignedTo && (
+                    <div className="detail-row">
+                      <div className="detail-item">
+                        <User size={16} />
+                        <div>
+                          <span className="detail-label">Assigned To</span>
+                          <span className="detail-value">{request.assignedTo}</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="maintenance-meta">
+                  <div className="meta-item">
+                    <Clock size={16} />
+                    <span>Created {new Date(request.createdDate).toLocaleDateString()}</span>
+                  </div>
+
+                  {request.images.length > 0 && (
+                    <div className="meta-item">
+                      <span>{request.images.length} photo{request.images.length !== 1 ? 's' : ''}</span>
+                    </div>
+                  )}
+
+                  {request.notes.length > 0 && (
+                    <div className="meta-item">
+                      <span>{request.notes.length} note{request.notes.length !== 1 ? 's' : ''}</span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="maintenance-card-footer">
+                  <button className="maintenance-action-btn">
+                    View Details
+                  </button>
+
+                  {request.status === 'open' && (
+                    <button className="maintenance-action-btn maintenance-action-primary">
+                      Assign
+                    </button>
+                  )}
+
+                  {request.status === 'in-progress' && (
+                    <button className="maintenance-action-btn maintenance-action-success">
+                      Mark Complete
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
     </div>

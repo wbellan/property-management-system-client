@@ -353,18 +353,21 @@ export const UsersPage: React.FC = () => {
 
     return (
         <div className="users-container">
-            <div className="users-header">
+            {/* Header matching MaintenanceContent structure exactly */}
+            <div className="maintenance-header">
                 <div>
-                    <h1 className="users-title">User Management</h1>
-                    <p className="users-subtitle">Manage team members, tenants, and their access levels</p>
+                    <h1 className="properties-title">User Management</h1>
+                    <p className="properties-subtitle">Manage team members, tenants, and their access levels</p>
                 </div>
-                <button onClick={() => setShowInviteModal(true)} className="btn btn-primary">
-                    <UserPlus style={{ width: '1rem', height: '1rem', marginRight: '0.5rem' }} />
-                    Invite User
-                </button>
+                <div className="maintenance-actions">
+                    <button onClick={() => setShowInviteModal(true)} className="btn btn-primary">
+                        <UserPlus style={{ width: '1rem', height: '1rem', marginRight: '0.5rem' }} />
+                        Invite User
+                    </button>
+                </div>
             </div>
 
-            <div className="users-toolbar">
+            <div className="maintenance-toolbar">
                 <div className="search-container">
                     <Search className="search-icon" />
                     <input
@@ -375,24 +378,46 @@ export const UsersPage: React.FC = () => {
                         className="search-input"
                     />
                 </div>
-                <select value={selectedRole} onChange={(e) => setSelectedRole(e.target.value)} className="filter-select">
-                    <option value="all">All Roles</option>
-                    <option value="ORG_ADMIN">Organization Admin</option>
-                    <option value="ENTITY_MANAGER">Entity Manager</option>
-                    <option value="PROPERTY_MANAGER">Property Manager</option>
-                    <option value="TENANT">Tenant</option>
-                    <option value="MAINTENANCE">Maintenance Staff</option>
-                    <option value="ACCOUNTANT">Accountant</option>
-                </select>
-                <select value={selectedStatus} onChange={(e) => setSelectedStatus(e.target.value)} className="filter-select">
-                    <option value="all">All Status</option>
-                    <option value="ACTIVE">Active</option>
-                    <option value="PENDING">Pending</option>
-                    <option value="INACTIVE">Inactive</option>
-                </select>
+
+                <div className="filter-controls">
+                    <div className="filter-group">
+                        <label className="filter-label">Role</label>
+                        <select
+                            value={selectedRole}
+                            onChange={(e) => setSelectedRole(e.target.value)}
+                            className="filter-select"
+                        >
+                            <option value="all">All Roles</option>
+                            <option value="ORG_ADMIN">Organization Admin</option>
+                            <option value="ENTITY_MANAGER">Entity Manager</option>
+                            <option value="PROPERTY_MANAGER">Property Manager</option>
+                            <option value="TENANT">Tenant</option>
+                            <option value="MAINTENANCE">Maintenance Staff</option>
+                            <option value="ACCOUNTANT">Accountant</option>
+                        </select>
+                    </div>
+
+                    <div className="filter-group">
+                        <label className="filter-label">Status</label>
+                        <select
+                            value={selectedStatus}
+                            onChange={(e) => setSelectedStatus(e.target.value)}
+                            className="filter-select"
+                        >
+                            <option value="all">All Status</option>
+                            <option value="ACTIVE">Active</option>
+                            <option value="PENDING">Pending</option>
+                            <option value="INACTIVE">Inactive</option>
+                        </select>
+                    </div>
+                </div>
+
+                <span className="maintenance-count">
+                    {filteredUsers.length} of {users.length} users
+                </span>
             </div>
 
-            <div className="stats-grid">
+            <div className="stats-grid" style={{ marginBottom: '2rem' }}>
                 <div className="stat-card">
                     <div className="flex items-center" style={{ gap: '1rem' }}>
                         <div className="stat-icon stat-icon-blue">
