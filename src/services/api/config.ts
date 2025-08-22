@@ -15,6 +15,7 @@ export const ENDPOINTS = {
 
   // Dashboard
   DASHBOARD_METRICS: '/reports/dashboard',
+  ORGANIZATION_DASHBOARD_METRICS: '/reports/dashboard/organization',
 
   // Properties
   PROPERTIES: '/properties',

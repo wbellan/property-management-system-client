@@ -199,6 +199,11 @@ class ApiService {
     return this.request(`${ENDPOINTS.DASHBOARD_METRICS}/${entityId}`, {}, token);
   }
 
+  // Add this new method to your ApiService class
+  async getOrganizationDashboardMetrics(organizationId: string, token?: string): Promise<ApiResponse> {
+    return this.request(`${ENDPOINTS.ORGANIZATION_DASHBOARD_METRICS}/${organizationId}`, {}, token);
+  }
+
   // Properties methods
   async getProperties(token?: string): Promise<ApiResponse> {
     return this.request(ENDPOINTS.PROPERTIES, {}, token);
