@@ -57,10 +57,6 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onLogin, isLoading, error 
     setCredentials(prev => ({ ...prev, [field]: e.target.value }));
   };
 
-  const handleDemoLogin = (email: string, role: string) => {
-    setCredentials({ email, password: 'admin123' });
-  };
-
   return (
     <div className="min-h-screen bg-gradient flex items-center justify-center">
       <div className="card animate-fade-in" style={{ maxWidth: '32rem' }}>
@@ -97,7 +93,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onLogin, isLoading, error 
               value={credentials.email}
               onChange={handleInputChange('email')}
               className="form-input"
-              placeholder="admin@demoproperties.com"
+              placeholder="Enter your email address"
               required
             />
           </div>
@@ -111,7 +107,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onLogin, isLoading, error 
                 onChange={handleInputChange('password')}
                 className="form-input"
                 style={{ paddingRight: '3rem' }}
-                placeholder="admin123"
+                placeholder="Enter your password"
                 required
               />
               <button
@@ -140,153 +136,6 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onLogin, isLoading, error 
           </button>
         </form>
 
-        {/* Demo Accounts Section */}
-        <div style={{ marginTop: '2rem', paddingTop: '1.5rem', borderTop: '1px solid var(--gray-200)' }}>
-          <h4 style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--gray-700)', marginBottom: '1rem', textAlign: 'center' }}>
-            Demo Accounts
-          </h4>
-          <div style={{ display: 'grid', gap: '0.5rem' }}>
-            <button
-              type="button"
-              onClick={() => handleDemoLogin('admin@demoproperties.com', 'Super Admin')}
-              style={{
-                width: '100%',
-                padding: '0.5rem 0.75rem',
-                background: 'rgba(99, 102, 241, 0.1)',
-                border: '1px solid rgba(99, 102, 241, 0.2)',
-                borderRadius: '0.5rem',
-                color: '#4f46e5',
-                fontSize: '0.75rem',
-                fontWeight: 500,
-                cursor: 'pointer',
-                transition: 'all 0.2s ease',
-                textAlign: 'left'
-              }}
-              onMouseEnter={(e) => {
-                e.target.style.background = 'rgba(99, 102, 241, 0.15)';
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.background = 'rgba(99, 102, 241, 0.1)';
-              }}
-            >
-              <strong>Super Admin:</strong> admin@demoproperties.com
-            </button>
-
-            <button
-              type="button"
-              onClick={() => handleDemoLogin('orgadmin@demoproperties.com', 'Org Admin')}
-              style={{
-                width: '100%',
-                padding: '0.5rem 0.75rem',
-                background: 'rgba(16, 185, 129, 0.1)',
-                border: '1px solid rgba(16, 185, 129, 0.2)',
-                borderRadius: '0.5rem',
-                color: '#059669',
-                fontSize: '0.75rem',
-                fontWeight: 500,
-                cursor: 'pointer',
-                transition: 'all 0.2s ease',
-                textAlign: 'left'
-              }}
-              onMouseEnter={(e) => {
-                e.target.style.background = 'rgba(16, 185, 129, 0.15)';
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.background = 'rgba(16, 185, 129, 0.1)';
-              }}
-            >
-              <strong>Org Admin:</strong> orgadmin@demoproperties.com
-            </button>
-
-            <button
-              type="button"
-              onClick={() => handleDemoLogin('manager@sunsetproperties.com', 'Entity Manager')}
-              style={{
-                width: '100%',
-                padding: '0.5rem 0.75rem',
-                background: 'rgba(245, 158, 11, 0.1)',
-                border: '1px solid rgba(245, 158, 11, 0.2)',
-                borderRadius: '0.5rem',
-                color: '#d97706',
-                fontSize: '0.75rem',
-                fontWeight: 500,
-                cursor: 'pointer',
-                transition: 'all 0.2s ease',
-                textAlign: 'left'
-              }}
-              onMouseEnter={(e) => {
-                e.target.style.background = 'rgba(245, 158, 11, 0.15)';
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.background = 'rgba(245, 158, 11, 0.1)';
-              }}
-            >
-              <strong>Entity Manager:</strong> manager@sunsetproperties.com
-            </button>
-
-            <button
-              type="button"
-              onClick={() => handleDemoLogin('maintenance@demoproperties.com', 'Maintenance')}
-              style={{
-                width: '100%',
-                padding: '0.5rem 0.75rem',
-                background: 'rgba(139, 92, 246, 0.1)',
-                border: '1px solid rgba(139, 92, 246, 0.2)',
-                borderRadius: '0.5rem',
-                color: '#7c3aed',
-                fontSize: '0.75rem',
-                fontWeight: 500,
-                cursor: 'pointer',
-                transition: 'all 0.2s ease',
-                textAlign: 'left'
-              }}
-              onMouseEnter={(e) => {
-                e.target.style.background = 'rgba(139, 92, 246, 0.15)';
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.background = 'rgba(139, 92, 246, 0.1)';
-              }}
-            >
-              <strong>Maintenance:</strong> maintenance@demoproperties.com
-            </button>
-
-            <button
-              type="button"
-              onClick={() => handleDemoLogin('tenant@example.com', 'Tenant')}
-              style={{
-                width: '100%',
-                padding: '0.5rem 0.75rem',
-                background: 'rgba(236, 72, 153, 0.1)',
-                border: '1px solid rgba(236, 72, 153, 0.2)',
-                borderRadius: '0.5rem',
-                color: '#db2777',
-                fontSize: '0.75rem',
-                fontWeight: 500,
-                cursor: 'pointer',
-                transition: 'all 0.2s ease',
-                textAlign: 'left'
-              }}
-              onMouseEnter={(e) => {
-                e.target.style.background = 'rgba(236, 72, 153, 0.15)';
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.background = 'rgba(236, 72, 153, 0.1)';
-              }}
-            >
-              <strong>Tenant:</strong> tenant@example.com
-            </button>
-          </div>
-
-          <p style={{
-            fontSize: '0.75rem',
-            color: 'var(--gray-500)',
-            textAlign: 'center',
-            marginTop: '1rem'
-          }}>
-            All demo accounts use password: <strong>admin123</strong>
-          </p>
-        </div>
-
         <div className="demo-credentials">
           <div className="text-center">
             <p style={{ fontSize: '0.75rem', color: 'var(--gray-500)', marginBottom: '0.5rem' }}>
@@ -310,7 +159,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onLogin, isLoading, error 
                 color: navigator.onLine ? '#059669' : '#dc2626',
                 fontWeight: 500
               }}>
-                {navigator.onLine ? 'Connected (Demo Mode)' : 'Offline'}
+                {navigator.onLine ? 'Connected' : 'Offline'}
               </span>
             </p>
           </div>
