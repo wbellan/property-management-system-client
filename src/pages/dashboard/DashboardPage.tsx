@@ -1,8 +1,14 @@
-// src/pages/dashboard/DashboardPage.tsx - Simple Dashboard Fix
+// In src/pages/dashboard/DashboardPage.tsx
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { DashboardContent } from '../../components/dashboard/DashboardContent';
 import { apiService } from '../../services/api/apiService';
+
+// Import role-specific dashboards
+import { AdminDashboard } from '../../components/dashboard/AdminDashboard'; // Your existing DashboardContent
+import { PropertyManagerDashboard } from '../../components/dashboard/PropertyManagerDashboard';
+import { AccountantDashboard } from '../../components/dashboard/AccountantDashboard';
+import { MaintenanceDashboard } from '../../components/dashboard/MaintenanceDashboard';
+import { TenantDashboard } from '../../components/dashboard/TenantDashboard';
 
 export const DashboardPage: React.FC = () => {
   const [metrics, setMetrics] = useState<any>(null);
@@ -16,19 +22,12 @@ export const DashboardPage: React.FC = () => {
 
       try {
         setLoading(true);
-
-        console.log('Loading dashboard for organization:', user.organizationId);
-        console.log('User role:', user.role);
-        console.log('User entities:', user.entities);
-
-        // Use organization ID instead of entity ID
+        // Use organization dashboard endpoint
         const data = await apiService.getOrganizationDashboardMetrics(
-          user.organizationId, // Use organizationId instead of entityId
+          user.organizationId,
           token
         );
-
-        console.log('Dashboard metrics loaded:', data);
-        setMetrics(data.data); // data.data because your API returns { success: true, data: {...} }
+        setMetrics(data.data); // Backend returns { success: true, data: {...} }
       } catch (error) {
         console.error('Failed to load dashboard metrics:', error);
         setError('Failed to load dashboard metrics. Please try again.');
@@ -36,46 +35,6 @@ export const DashboardPage: React.FC = () => {
         setLoading(false);
       }
     };
-    // const loadMetrics = async () => {
-    //   if (!user || !token) return;
-
-    //   setLoading(true);
-    //   setError(null);
-
-    //   try {
-    //     // Try to get entity ID from user
-    //     let entityId = null;
-
-    //     // Check different possible entity sources
-    //     if (user.entities && user.entities.length > 0) {
-    //       entityId = user.entities[0].id;
-    //     } else if (user.organizationId) {
-    //       // Fallback to organization ID if no entities
-    //       entityId = user.organizationId;
-    //     }
-
-    //     if (!entityId) {
-    //       throw new Error('No entity access available');
-    //     }
-
-    //     console.log('Loading dashboard for entity:', entityId);
-
-    //     // Call your existing API service method
-    //     const response = await apiService.getDashboardMetrics(entityId, token);
-
-    //     // Handle the response data
-    //     const data = response.data || response;
-    //     console.log('Dashboard data received:', data);
-
-    //     setMetrics(data);
-
-    //   } catch (error: any) {
-    //     console.error('Dashboard load error:', error);
-    //     setError(error.message || 'Failed to load dashboard');
-    //   } finally {
-    //     setLoading(false);
-    //   }
-    // };
 
     loadMetrics();
   }, [user, token]);
@@ -84,7 +43,6 @@ export const DashboardPage: React.FC = () => {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
-        <span className="ml-3">Loading dashboard...</span>
       </div>
     );
   }
@@ -96,7 +54,7 @@ export const DashboardPage: React.FC = () => {
           <p className="text-red-600 mb-4">{error}</p>
           <button
             onClick={() => window.location.reload()}
-            className="bg-indigo-600 text-white px-4 py-2 rounded"
+            className="btn btn-primary"
           >
             Retry
           </button>
@@ -105,5 +63,38 @@ export const DashboardPage: React.FC = () => {
     );
   }
 
-  return <DashboardContent metrics={metrics} user={user} />;
+  // Route to appropriate dashboard based on user role
+  const renderDashboard = () => {
+    switch (user?.role) {
+      case 'SUPER_ADMIN':
+      case 'ORG_ADMIN':
+      case 'ENTITY_MANAGER':
+        return <AdminDashboard metrics={metrics} user={user} />;
+
+      case 'PROPERTY_MANAGER':
+        return <PropertyManagerDashboard metrics={metrics} user={user} />;
+
+      case 'ACCOUNTANT':
+        return <AccountantDashboard metrics={metrics} user={user} />;
+
+      case 'MAINTENANCE':
+        return <MaintenanceDashboard metrics={metrics} user={user} />;
+
+      case 'TENANT':
+        return <TenantDashboard metrics={metrics} user={user} />;
+
+      default:
+        return (
+          <div className="text-center py-12">
+            <p className="text-gray-600">Dashboard not available for your role.</p>
+          </div>
+        );
+    }
+  };
+
+  return (
+    <div className="dashboard-container">
+      {renderDashboard()}
+    </div>
+  );
 };

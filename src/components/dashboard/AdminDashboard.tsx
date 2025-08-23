@@ -26,7 +26,7 @@ const getGradientColors = (colorClass: string) => {
   return colorMap[colorClass] || '#6366f1, #7c3aed';
 };
 
-export const DashboardContent: React.FC<any> = ({ metrics, user }) => {
+export const AdminDashboard: React.FC<any> = ({ metrics, user }) => {
   const navigate = useNavigate();
   const { user: currentUser } = useAuth();
 
