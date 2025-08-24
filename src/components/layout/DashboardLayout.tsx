@@ -12,6 +12,7 @@ import { SettingsPage } from '../../pages/settings/SettingsPage';
 import { UsersPage } from '../../pages/users';
 import { ProtectedRoute } from './ProtectedRoute';
 import { ProfilePage } from '../../pages/profile/ProfilePage';
+import { FinancialsPage } from '../../pages/financials/FinancialsPage';
 
 export const DashboardLayout: React.FC = () => {
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
@@ -33,7 +34,7 @@ export const DashboardLayout: React.FC = () => {
             </ProtectedRoute>
           } />
           <Route path="/users/*" element={
-            <ProtectedRoute requiredRoles={['ORG_ADMIN', 'ENTITY_MANAGER']}>
+            <ProtectedRoute requiredRoles={['SUPER_ADMIN', 'ORG_ADMIN', 'ENTITY_MANAGER']}>
               <UsersPage />
             </ProtectedRoute>
           } />
@@ -43,7 +44,7 @@ export const DashboardLayout: React.FC = () => {
             </ProtectedRoute>
           } />
           <Route path="/tenants/*" element={
-            <ProtectedRoute requiredRoles={['ORG_ADMIN', 'ENTITY_MANAGER', 'PROPERTY_MANAGER']}>
+            <ProtectedRoute requiredRoles={['SUPER_ADMIN', 'ORG_ADMIN', 'ENTITY_MANAGER', 'PROPERTY_MANAGER']}>
               <TenantsPage />
             </ProtectedRoute>
           } />
@@ -59,12 +60,17 @@ export const DashboardLayout: React.FC = () => {
             </ProtectedRoute>
           } />
 
+          <Route path="/financials/*" element={
+            <ProtectedRoute>
+              <FinancialsPage />
+            </ProtectedRoute>
+          } />
+
           <Route path="/reports/*" element={
             <ProtectedRoute>
               <ReportsPage />
             </ProtectedRoute>
           } />
-          {/* <Route path="/settings/*" element={<SettingsPage />} /> */}
 
           <Route path="/settings/*" element={
             <ProtectedRoute >
