@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { apiService } from '../../services/api/apiService';
 import { Camera, User, Phone, Mail, MapPin, Calendar, Briefcase } from 'lucide-react';
-// import { ProfileSection } from '../../components/profile/ProfileSection';
 
 export const ProfilePage: React.FC = () => {
     const { user } = useAuth();
@@ -10,6 +9,7 @@ export const ProfilePage: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [editing, setEditing] = useState(false);
     const [formData, setFormData] = useState<any>({});
+    const [photoPreview, setPhotoPreview] = useState<string | null>(null);
 
     useEffect(() => {
         loadProfile();
@@ -18,12 +18,10 @@ export const ProfilePage: React.FC = () => {
     const loadProfile = async () => {
         try {
             const response = await apiService.getProfile();
-            console.log('Profile Data', response);
             setProfile(response);
-            setFormData(response || {}); // Ensure formData is never null/undefined
+            setFormData(response || {});
         } catch (error) {
             console.error('Failed to load profile:', error);
-            // Set fallback data
             setProfile({});
             setFormData({});
         } finally {
@@ -33,7 +31,6 @@ export const ProfilePage: React.FC = () => {
 
     const handleSave = async () => {
         try {
-            // Filter out read-only fields
             const editableFields = {
                 firstName: formData.firstName,
                 lastName: formData.lastName,
@@ -49,16 +46,11 @@ export const ProfilePage: React.FC = () => {
                 emergencyContactPhone: formData.emergencyContactPhone
             };
 
-            // Remove undefined/null values
             const cleanData = Object.fromEntries(
                 Object.entries(editableFields).filter(([_, value]) => value !== undefined && value !== null)
             );
 
-            console.log('Saving profile data:', cleanData);
             const response = await apiService.updateProfile(cleanData);
-            console.log('Profile update response:', response);
-
-            // Update local state with the response data
             setProfile(response.data || { ...profile, ...cleanData });
             setFormData(response.data || { ...formData, ...cleanData });
             setEditing(false);
@@ -67,20 +59,6 @@ export const ProfilePage: React.FC = () => {
         }
     };
 
-    if (loading) {
-        return (
-            <div style={{
-                display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center',
-                height: '50vh'
-            }}>
-                Loading profile...
-            </div>
-        );
-    }
-
-    // Add this function inside the ProfilePage component
     const handlePhotoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
         if (!file) return;
@@ -95,23 +73,29 @@ export const ProfilePage: React.FC = () => {
             return;
         }
 
-        try {
-            console.log('Uploading file:', file.name, file.size);
-            const compressedFile = await compressImage(file);
-            const response = await apiService.uploadProfilePhoto(compressedFile);
-            console.log('Upload response:', response);
+        // Create object URL for immediate preview
+        const objectUrl = URL.createObjectURL(file);
+        setPhotoPreview(objectUrl);
 
-            // Handle the response structure
+        try {
+            const response = await apiService.uploadProfilePhoto(file);
             const photoUrl = response?.data?.profilePhotoUrl || response?.profilePhotoUrl;
 
             if (photoUrl) {
-                const updatedProfile = { ...profile, profilePhotoUrl: photoUrl };
+                // Clean up object URL
+                URL.revokeObjectURL(objectUrl);
+                setPhotoPreview(null);
+
+                // Update with server URL + cache buster
+                const urlWithCacheBuster = `${photoUrl}?t=${Date.now()}`;
+                const updatedProfile = { ...profile, profilePhotoUrl: urlWithCacheBuster };
                 setProfile(updatedProfile);
                 setFormData(updatedProfile);
-            } else {
-                throw new Error('No photo URL returned from server');
             }
         } catch (error) {
+            // Clean up object URL on error
+            URL.revokeObjectURL(objectUrl);
+            setPhotoPreview(null);
             console.error('Failed to upload photo:', error);
             alert('Failed to upload photo. Please try again.');
         }
@@ -128,30 +112,39 @@ export const ProfilePage: React.FC = () => {
         }
     };
 
-    const compressImage = (file: File, maxWidth: number = 800, quality: number = 0.8): Promise<File> => {
-        return new Promise((resolve) => {
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d')!;
-            const img = new Image();
-
-            img.onload = () => {
-                const ratio = Math.min(maxWidth / img.width, maxWidth / img.height);
-                canvas.width = img.width * ratio;
-                canvas.height = img.height * ratio;
-
-                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-
-                canvas.toBlob((blob) => {
-                    resolve(new File([blob!], file.name, { type: file.type }));
-                }, file.type, quality);
-            };
-
-            img.src = URL.createObjectURL(file);
-        });
+    const getPhotoUrl = () => {
+        if (photoPreview) {
+            return photoPreview; // Show preview while uploading
+        }
+        if (profile?.profilePhotoUrl) {
+            return `http://localhost:3000${profile.profilePhotoUrl}`;
+        }
+        return null;
     };
+
+    if (loading) {
+        return (
+            <div style={{
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                height: '50vh'
+            }}>
+                Loading profile...
+            </div>
+        );
+    }
 
     return (
         <div style={{ maxWidth: '4xl', margin: '0 auto', padding: '2rem' }}>
+            {/* CSS for spinning animation */}
+            <style>{`
+        @keyframes spin {
+          0% { transform: translate(-50%, -50%) rotate(0deg); }
+          100% { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+      `}</style>
+
             {/* Profile Header */}
             <div style={{
                 background: 'rgba(255, 255, 255, 0.8)',
@@ -164,13 +157,14 @@ export const ProfilePage: React.FC = () => {
                 alignItems: 'center',
                 gap: '2rem'
             }}>
+                {/* Profile Photo with Preview */}
                 <div style={{ position: 'relative' }}>
                     <div style={{
                         width: '6rem',
                         height: '6rem',
                         borderRadius: '50%',
-                        background: profile?.profilePhotoUrl ?
-                            `url(http://localhost:3000${profile.profilePhotoUrl})` :  // Full URL
+                        background: getPhotoUrl() ?
+                            `url(${getPhotoUrl()})` :
                             'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
                         backgroundSize: 'cover',
                         backgroundPosition: 'center',
@@ -179,12 +173,30 @@ export const ProfilePage: React.FC = () => {
                         justifyContent: 'center',
                         color: 'white',
                         fontSize: '1.5rem',
-                        fontWeight: 'bold'
+                        fontWeight: 'bold',
+                        opacity: photoPreview && !profile?.profilePhotoUrl ? 0.7 : 1,
+                        border: photoPreview && !profile?.profilePhotoUrl ? '2px solid #6366f1' : 'none'
                     }}>
-                        {!profile?.profilePhotoUrl && (
+                        {!getPhotoUrl() && (
                             `${profile?.firstName?.[0] || ''}${profile?.lastName?.[0] || ''}`
                         )}
+                        {/* Loading indicator while uploading */}
+                        {photoPreview && !profile?.profilePhotoUrl && (
+                            <div style={{
+                                position: 'absolute',
+                                top: '50%',
+                                left: '50%',
+                                transform: 'translate(-50%, -50%)',
+                                width: '2rem',
+                                height: '2rem',
+                                border: '3px solid rgba(255,255,255,0.3)',
+                                borderTop: '3px solid white',
+                                borderRadius: '50%',
+                                animation: 'spin 1s linear infinite'
+                            }} />
+                        )}
                     </div>
+
                     {editing && (
                         <div style={{
                             position: 'absolute',
@@ -202,8 +214,9 @@ export const ProfilePage: React.FC = () => {
                             />
                             <button
                                 onClick={() => document.getElementById('photo-upload')?.click()}
+                                disabled={!!photoPreview}
                                 style={{
-                                    background: '#6366f1',
+                                    background: photoPreview ? '#9ca3af' : '#6366f1',
                                     color: 'white',
                                     border: 'none',
                                     borderRadius: '50%',
@@ -212,17 +225,18 @@ export const ProfilePage: React.FC = () => {
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'center',
-                                    cursor: 'pointer'
+                                    cursor: photoPreview ? 'not-allowed' : 'pointer'
                                 }}
-                                title="Upload photo"
+                                title={photoPreview ? 'Uploading...' : 'Upload photo'}
                             >
                                 <Camera size={16} />
                             </button>
-                            {profile?.profilePhotoUrl && (
+                            {(profile?.profilePhotoUrl || photoPreview) && (
                                 <button
                                     onClick={handlePhotoRemove}
+                                    disabled={!!photoPreview}
                                     style={{
-                                        background: '#ef4444',
+                                        background: photoPreview ? '#9ca3af' : '#ef4444',
                                         color: 'white',
                                         border: 'none',
                                         borderRadius: '50%',
@@ -231,9 +245,9 @@ export const ProfilePage: React.FC = () => {
                                         display: 'flex',
                                         alignItems: 'center',
                                         justifyContent: 'center',
-                                        cursor: 'pointer'
+                                        cursor: photoPreview ? 'not-allowed' : 'pointer'
                                     }}
-                                    title="Remove photo"
+                                    title={photoPreview ? 'Cannot remove while uploading' : 'Remove photo'}
                                 >
                                     ×
                                 </button>
@@ -342,13 +356,71 @@ export const ProfilePage: React.FC = () => {
                     editing={editing}
                     onChange={setFormData}
                 />
+
+                <ProfileSection
+                    title="Emergency Contact"
+                    icon={<User size={20} />}
+                    fields={[
+                        { key: 'emergencyContactName', label: 'Emergency Contact Name', type: 'text' },
+                        { key: 'emergencyContactPhone', label: 'Emergency Contact Phone', type: 'tel' }
+                    ]}
+                    data={formData}
+                    editing={editing}
+                    onChange={setFormData}
+                />
+
+                <div style={{
+                    background: 'rgba(255, 255, 255, 0.8)',
+                    backdropFilter: 'blur(10px)',
+                    borderRadius: '1rem',
+                    padding: '1.5rem',
+                    border: '1px solid rgba(255, 255, 255, 0.2)'
+                }}>
+                    <h3 style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        fontSize: '1.125rem',
+                        fontWeight: 600,
+                        marginBottom: '1rem'
+                    }}>
+                        <Calendar size={20} /> Account Information
+                    </h3>
+                    <div style={{ display: 'grid', gap: '0.75rem' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                            <span style={{ color: '#6b7280', fontWeight: 500 }}>Member Since:</span>
+                            <span>{new Date(profile?.createdAt).toLocaleDateString()}</span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                            <span style={{ color: '#6b7280', fontWeight: 500 }}>Last Login:</span>
+                            <span>
+                                {profile?.lastLoginAt
+                                    ? new Date(profile.lastLoginAt).toLocaleString()
+                                    : 'Never'
+                                }
+                            </span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                            <span style={{ color: '#6b7280', fontWeight: 500 }}>Status:</span>
+                            <span style={{
+                                padding: '0.25rem 0.5rem',
+                                borderRadius: '0.5rem',
+                                fontSize: '0.75rem',
+                                fontWeight: 500,
+                                background: profile?.status === 'ACTIVE' ? '#dcfce7' : '#fee2e2',
+                                color: profile?.status === 'ACTIVE' ? '#166534' : '#991b1b'
+                            }}>
+                                {profile?.status}
+                            </span>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     );
 };
 
 const ProfileSection = ({ title, icon, fields, data, editing, onChange }) => {
-    // Add this guard clause at the top
     if (!data) {
         return (
             <div style={{
@@ -400,7 +472,7 @@ const ProfileSection = ({ title, icon, fields, data, editing, onChange }) => {
                     {editing ? (
                         field.type === 'textarea' ? (
                             <textarea
-                                value={data[field.key] || ''} // Safe access with fallback
+                                value={data[field.key] || ''}
                                 onChange={(e) => handleChange(field.key, e.target.value)}
                                 style={{
                                     width: '100%',
@@ -413,7 +485,7 @@ const ProfileSection = ({ title, icon, fields, data, editing, onChange }) => {
                         ) : (
                             <input
                                 type={field.type}
-                                value={data[field.key] || ''} // Safe access with fallback
+                                value={data[field.key] || ''}
                                 onChange={(e) => handleChange(field.key, e.target.value)}
                                 style={{
                                     width: '100%',
@@ -434,7 +506,7 @@ const ProfileSection = ({ title, icon, fields, data, editing, onChange }) => {
                             minHeight: '1rem'
                         }}>
                             {field.icon}
-                            <span>{data[field.key] || 'Not set'}</span> {/* Safe access with fallback */}
+                            <span>{data[field.key] || 'Not set'}</span>
                         </div>
                     )}
                 </div>

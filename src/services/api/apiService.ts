@@ -303,17 +303,6 @@ class ApiService {
     }, token);
   }
 
-  // async uploadProfilePhoto(file: File, token?: string): Promise<ApiResponse> {
-  //   const formData = new FormData();
-  //   formData.append('photo', file);
-
-  //   return this.request('/profile/photo', {
-  //     method: 'POST',
-  //     body: formData,
-  //     headers: this.getAuthHeaders(token), // Remove Content-Type for FormData
-  //   }, token);
-  // }
-
   async uploadProfilePhoto(file: File, token?: string): Promise<ApiResponse> {
     const formData = new FormData();
     formData.append('photo', file);
