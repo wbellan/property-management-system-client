@@ -334,6 +334,36 @@ class ApiService {
       method: 'DELETE',
     }, token);
   }
+
+  // Settings methods
+  async getUserSettings(token?: string): Promise<ApiResponse> {
+    return this.request('/settings/preferences', {}, token);
+  }
+
+  async updateUserSetting(category: string, key: string, value: string, token?: string): Promise<ApiResponse> {
+    return this.request(`/settings/preferences/${category}/${key}`, {
+      method: 'PUT',
+      body: JSON.stringify({ value }),
+    }, token);
+  }
+
+  async getOrganizationSettings(token?: string): Promise<ApiResponse> {
+    return this.request('/settings/organization', {}, token);
+  }
+
+  async updateOrganizationSetting(category: string, key: string, value: string, token?: string): Promise<ApiResponse> {
+    return this.request(`/settings/organization/${category}/${key}`, {
+      method: 'PUT',
+      body: JSON.stringify({ value }),
+    }, token);
+  }
+
+  async changePassword(currentPassword: string, newPassword: string, token?: string): Promise<ApiResponse> {
+    return this.request('/settings/change-password', {
+      method: 'PUT',
+      body: JSON.stringify({ currentPassword, newPassword }),
+    }, token);
+  }
 }
 
 export const apiService = new ApiService();
