@@ -170,7 +170,7 @@ export const ProfilePage: React.FC = () => {
                         height: '6rem',
                         borderRadius: '50%',
                         background: profile?.profilePhotoUrl ?
-                            `url(${profile.profilePhotoUrl})` :
+                            `url(http://localhost:3000${profile.profilePhotoUrl})` :  // Full URL
                             'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
                         backgroundSize: 'cover',
                         backgroundPosition: 'center',
