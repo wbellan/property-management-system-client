@@ -105,7 +105,7 @@ export const Header: React.FC<HeaderProps> = ({ onMobileMenuOpen }) => {
                   </div>
                 </div>
                 <div className="user-menu-divider"></div>
-                <Link to="/settings" className="user-menu-item" onClick={() => setShowUserMenu(false)}>
+                <Link to="/profile" className="user-menu-item" onClick={() => setShowUserMenu(false)}>
                   <User size={16} />
                   Profile
                 </Link>

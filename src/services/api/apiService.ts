@@ -172,6 +172,13 @@ class ApiService {
             leaseEndDate: '2025-12-31'
           }
         ]
+      },
+      '/profile/photo': {
+        success: true,
+        data: {
+          profilePhotoUrl: '/uploads/demo-profile.jpg',
+          message: 'Demo: Photo upload simulated'
+        }
       }
     };
 
@@ -282,6 +289,61 @@ class ApiService {
     const queryString = new URLSearchParams(params).toString();
     const endpoint = `/reports/${type}/${entityId}${queryString ? `?${queryString}` : ''}`;
     return this.request(endpoint, {}, token);
+  }
+
+  // Profile methods
+  async getProfile(token?: string): Promise<ApiResponse> {
+    return this.request('/profile', {}, token);
+  }
+
+  async updateProfile(profileData: any, token?: string): Promise<ApiResponse> {
+    return this.request('/profile', {
+      method: 'PUT',
+      body: JSON.stringify(profileData),
+    }, token);
+  }
+
+  // async uploadProfilePhoto(file: File, token?: string): Promise<ApiResponse> {
+  //   const formData = new FormData();
+  //   formData.append('photo', file);
+
+  //   return this.request('/profile/photo', {
+  //     method: 'POST',
+  //     body: formData,
+  //     headers: this.getAuthHeaders(token), // Remove Content-Type for FormData
+  //   }, token);
+  // }
+
+  async uploadProfilePhoto(file: File, token?: string): Promise<ApiResponse> {
+    const formData = new FormData();
+    formData.append('photo', file);
+
+    // Use the standard request method but with FormData
+    const authHeaders = this.getAuthHeaders(token);
+    // Remove Content-Type to let browser set it for FormData
+    delete authHeaders['Content-Type'];
+
+    try {
+      const response = await fetch(`${this.baseURL}/profile/photo`, {
+        method: 'POST',
+        headers: authHeaders,
+        body: formData,
+      });
+      return this.handleResponse(response);
+    } catch (error) {
+      // Same fallback handling as your other methods
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        console.warn(`API endpoint /profile/photo not available, using fallback data`);
+        return this.getFallbackData('/profile/photo');
+      }
+      throw error;
+    }
+  }
+
+  async removeProfilePhoto(token?: string): Promise<ApiResponse> {
+    return this.request('/profile/photo', {
+      method: 'DELETE',
+    }, token);
   }
 }
 
