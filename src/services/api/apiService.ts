@@ -216,6 +216,12 @@ class ApiService {
     return this.request(ENDPOINTS.PROPERTIES, {}, token);
   }
 
+  async getProperty(id: string, token?: string): Promise<ApiResponse> {
+    return this.request(`${ENDPOINTS.PROPERTIES}/${id}`, {
+      method: 'GET',
+    }, token);
+  }
+
   async createProperty(data: any, token?: string): Promise<ApiResponse> {
     return this.request(ENDPOINTS.PROPERTIES, {
       method: 'POST',
@@ -234,6 +240,11 @@ class ApiService {
     return this.request(`${ENDPOINTS.PROPERTIES}/${id}`, {
       method: 'DELETE',
     }, token);
+  }
+
+  // Entities
+  async getEntities(token?: string): Promise<ApiResponse> {
+    return this.request('/entities', {}, token);
   }
 
   // Tenants methods

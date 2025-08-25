@@ -13,6 +13,7 @@ import { UsersPage } from '../../pages/users';
 import { ProtectedRoute } from './ProtectedRoute';
 import { ProfilePage } from '../../pages/profile/ProfilePage';
 import { FinancialsPage } from '../../pages/financials/FinancialsPage';
+import { PropertyDetailsPage } from '../../pages/properties';
 
 export const DashboardLayout: React.FC = () => {
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
@@ -81,6 +82,12 @@ export const DashboardLayout: React.FC = () => {
           <Route path="/profile/*" element={
             <ProtectedRoute>
               <ProfilePage />
+            </ProtectedRoute>
+          } />
+
+          <Route path="/properties/:id" element={
+            <ProtectedRoute>
+              <PropertyDetailsPage />
             </ProtectedRoute>
           } />
         </Routes>
