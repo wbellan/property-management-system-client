@@ -5,7 +5,7 @@ export interface User {
   lastName: string;
   role: UserRole;
   organizationId: string;
-  entities?: Entity[];
+  entities?: UserEntity[];
 }
 
 export interface AuthResponse {
@@ -23,7 +23,7 @@ export enum UserRole {
   ACCOUNTANT = 'ACCOUNTANT',
 }
 
-export interface Entity {
+export interface UserEntity {
   id: string;
   name: string;
   type: string;

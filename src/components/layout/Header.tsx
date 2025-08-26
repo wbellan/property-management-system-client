@@ -30,6 +30,11 @@ export const Header: React.FC<HeaderProps> = ({ onMobileMenuOpen }) => {
       roles: ['*']
     },
     {
+      path: '/entities',
+      label: 'Entities',
+      roles: ['SUPER_ADMIN', 'ORG_ADMIN', 'ENTITY_MANAGER']
+    },
+    {
       path: '/properties',
       label: 'Properties',
       roles: ['*']
