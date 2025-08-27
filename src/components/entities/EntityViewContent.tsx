@@ -1,4 +1,3 @@
-// src/components/entities/EntityViewContent.tsx
 import React from 'react';
 import { Home, Users, CheckCircle, TrendingUp, AlertCircle } from 'lucide-react';
 import type { Entity, EntityStats } from '../../types/entity';

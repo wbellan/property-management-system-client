@@ -1,6 +1,6 @@
 // src/components/entities/EntityCard.tsx
 import React from 'react';
-import { Eye, Edit3, Trash2, MapPin, Phone, Mail, CheckCircle, AlertCircle, BarChart3 } from 'lucide-react';
+import { Eye, Edit3, Trash2, MapPin, Phone, Mail, CheckCircle, AlertCircle, BarChart3, Shield } from 'lucide-react';
 import type { Entity } from '../../types/entity';
 
 export interface EntityCardProps {
@@ -39,15 +39,24 @@ export const EntityCard: React.FC<EntityCardProps> = ({ entity, onView, onEdit, 
                 marginBottom: '1rem'
             }}>
                 <div style={{ flex: 1 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                        <h3 style={{
-                            fontSize: '1.125rem',
-                            fontWeight: '600',
-                            color: '#1f2937',
-                            margin: 0
-                        }}>
-                            {entity.name}
-                        </h3>
+                    <h3 style={{
+                        fontSize: '1.125rem',
+                        fontWeight: '600',
+                        color: '#1f2937',
+                        margin: '0 0 0.5rem 0'
+                    }}>
+                        {entity.name}
+                    </h3>
+
+                    {/* Status Badges Row */}
+                    <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        marginBottom: '0.5rem',
+                        flexWrap: 'wrap'
+                    }}>
+                        {/* Active/Inactive Badge */}
                         <span style={{
                             display: 'inline-flex',
                             alignItems: 'center',
@@ -66,7 +75,7 @@ export const EntityCard: React.FC<EntityCardProps> = ({ entity, onView, onEdit, 
                             {entity.isActive ? 'Active' : 'Inactive'}
                         </span>
 
-                        {/* EIN Verification Badge */}
+                        {/* EIN Verification Badge - Only show if taxId exists */}
                         {entity.taxId && (
                             <span style={{
                                 display: 'inline-flex',
@@ -78,26 +87,19 @@ export const EntityCard: React.FC<EntityCardProps> = ({ entity, onView, onEdit, 
                                 backgroundColor: entity.isVerified ? '#dbeafe' : '#fef3c7',
                                 color: entity.isVerified ? '#1e40af' : '#92400e'
                             }}>
-                                {entity.isVerified ? (
-                                    <>
-                                        <CheckCircle size={12} style={{ marginRight: '0.25rem' }} />
-                                        EIN Verified
-                                    </>
-                                ) : (
-                                    <>
-                                        <AlertCircle size={12} style={{ marginRight: '0.25rem' }} />
-                                        EIN Pending
-                                    </>
-                                )}
+                                <Shield size={12} style={{ marginRight: '0.25rem' }} />
+                                {entity.isVerified ? 'EIN Verified' : 'EIN Pending'}
                             </span>
                         )}
                     </div>
+
                     <p style={{
                         color: '#6b7280',
                         fontSize: '0.875rem',
                         margin: 0
                     }}>
-                        {entity.entityType} • {entity.organization.name}
+                        {/* {entity.entityType} • {entity.organization.name} */}
+                         Managed By {entity.organization.name}
                     </p>
                 </div>
 
@@ -165,7 +167,7 @@ export const EntityCard: React.FC<EntityCardProps> = ({ entity, onView, onEdit, 
                 </div>
             </div>
 
-            {/* Content */}
+            {/* Legal Name */}
             <div style={{ marginBottom: '1rem' }}>
                 <p style={{
                     fontSize: '0.875rem',
@@ -190,6 +192,7 @@ export const EntityCard: React.FC<EntityCardProps> = ({ entity, onView, onEdit, 
                     </p>
                 )}
 
+                {/* Contact Information */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
                     {entity.address && (
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>

@@ -259,7 +259,12 @@ export const EntityFormContent: React.FC<EntityFormContentProps> = ({
                         }}>
                             Tax ID / EIN
                         </label>
-                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+
+                        <div style={{
+                            display: 'flex',
+                            gap: '0.5rem',
+                            alignItems: 'center'
+                        }}>
                             <input
                                 type="text"
                                 value={formData.taxId}
@@ -274,6 +279,7 @@ export const EntityFormContent: React.FC<EntityFormContentProps> = ({
                                 placeholder="XX-XXXXXXX"
                                 maxLength={10}
                             />
+
                             <button
                                 type="button"
                                 onClick={handleVerifyEIN}
@@ -285,6 +291,7 @@ export const EntityFormContent: React.FC<EntityFormContentProps> = ({
                                     border: 'none',
                                     borderRadius: '0.5rem',
                                     fontSize: '0.875rem',
+                                    fontWeight: '500',
                                     cursor: 'pointer',
                                     display: 'flex',
                                     alignItems: 'center',
@@ -303,12 +310,12 @@ export const EntityFormContent: React.FC<EntityFormContentProps> = ({
                                         Verified
                                     </>
                                 ) : (
-                                    'Verify EIN'
+                                    'Verify'
                                 )}
                             </button>
                         </div>
 
-                        {/* Verification Status Messages */}
+                        {/* Error Message */}
                         {einVerification.error && (
                             <div style={{
                                 marginTop: '0.5rem',
@@ -327,6 +334,7 @@ export const EntityFormContent: React.FC<EntityFormContentProps> = ({
                             </div>
                         )}
 
+                        {/* Success Message */}
                         {einVerification.isVerified && einVerification.verificationResult && (
                             <div style={{
                                 marginTop: '0.5rem',
@@ -341,7 +349,7 @@ export const EntityFormContent: React.FC<EntityFormContentProps> = ({
                                     gap: '0.5rem',
                                     marginBottom: '0.5rem'
                                 }}>
-                                    <CheckCircle size={16} style={{ color: '#16a34a' }} />
+                                    <CheckCircle size={20} style={{ color: '#16a34a' }} />
                                     <span style={{ fontSize: '0.875rem', color: '#16a34a', fontWeight: '600' }}>
                                         EIN Verified Successfully
                                     </span>
