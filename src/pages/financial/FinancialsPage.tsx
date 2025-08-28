@@ -2,8 +2,15 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { NavLink, useLocation } from 'react-router-dom';
-import { BarChart3, FileText, CreditCard } from 'lucide-react';
-import { FinancialDashboard, InvoiceManagement, PaymentApplicationInterface } from '../../components/financial';
+import { BarChart3, FileText, CreditCard, Building2, Receipt, TrendingUp } from 'lucide-react';
+import {
+    FinancialDashboard,
+    InvoiceManagement,
+    PaymentApplicationInterface
+} from '../../components/financial';
+import BankReconciliation from '../../components/financial/BankReconciliation';
+import ExpenseManagement from '../../components/financial/ExpenseManagement';
+import FinancialReports from '../../components/financial/FinancialReports';
 
 const FinancialsPage: React.FC = () => {
     const location = useLocation();
@@ -23,6 +30,21 @@ const FinancialsPage: React.FC = () => {
             path: '/financials/payments',
             label: 'Payments',
             icon: CreditCard
+        },
+        {
+            path: '/financials/reconciliation',
+            label: 'Reconciliation',
+            icon: Building2
+        },
+        {
+            path: '/financials/expenses',
+            label: 'Expenses',
+            icon: Receipt
+        },
+        {
+            path: '/financials/reports',
+            label: 'Reports',
+            icon: TrendingUp
         }
     ];
 
@@ -56,6 +78,7 @@ const FinancialsPage: React.FC = () => {
                                     : {
                                         background: 'rgba(255, 255, 255, 0.2)',
                                         backdropFilter: 'blur(4px)',
+                                        // color: 'white'
                                     }
                                 )
                             }}
@@ -83,6 +106,9 @@ const FinancialsPage: React.FC = () => {
                 <Route path="dashboard" element={<FinancialDashboard />} />
                 <Route path="invoices" element={<InvoiceManagement />} />
                 <Route path="payments" element={<PaymentApplicationInterface />} />
+                <Route path="reconciliation" element={<BankReconciliation />} />
+                <Route path="expenses" element={<ExpenseManagement />} />
+                <Route path="reports" element={<FinancialReports />} />
                 <Route path="*" element={<Navigate to="dashboard" replace />} />
             </Routes>
         </div>
