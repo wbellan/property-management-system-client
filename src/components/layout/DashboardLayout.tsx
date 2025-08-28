@@ -12,9 +12,10 @@ import { SettingsPage } from '../../pages/settings/SettingsPage';
 import { UsersPage } from '../../pages/users';
 import { ProtectedRoute } from './ProtectedRoute';
 import { ProfilePage } from '../../pages/profile/ProfilePage';
-import { FinancialsPage } from '../../pages/financials/FinancialsPage';
+
 import { PropertyDetailsPage } from '../../pages/properties';
 import EntitiesPage from '../../pages/entities/EntitiesPage';
+import FinancialsPage from '../../pages/financial/FinancialsPage';
 
 export const DashboardLayout: React.FC = () => {
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
