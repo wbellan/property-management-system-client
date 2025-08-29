@@ -3627,3 +3627,83 @@ body {
     justify-content: flex-start;
   }
 }
+
+/* FIX FOR QUICK ACTIONS 2025-08-29 */
+/* FIXED: Quick Actions Buttons - Proper spacing and alignment */
+.quick-action-btn {
+  width: 100%;
+  padding: 1rem;
+  border-radius: 0.75rem;
+  font-weight: 500;
+  font-size: 0.875rem;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: white;
+  display: flex;
+  align-items: flex-start; /* Changed from center to flex-start */
+  text-align: left;
+  gap: 0.75rem; /* Added proper gap between icon and text */
+  background: none;
+}
+
+/* FIXED: Icon container to prevent overlap */
+.quick-action-btn svg {
+  flex-shrink: 0; /* Prevent icon from shrinking */
+  margin-top: 0.125rem; /* Slight offset to align with first line of text */
+}
+
+/* FIXED: Text container to allow proper wrapping */
+.quick-action-btn > div {
+  flex: 1; /* Take remaining space */
+  min-width: 0; /* Allow text to wrap properly */
+}
+
+.quick-action-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.quick-action-primary {
+  background: linear-gradient(135deg, var(--indigo-500), var(--purple-600));
+}
+
+.quick-action-success {
+  background: linear-gradient(135deg, #10b981, #059669);
+}
+
+.quick-action-warning {
+  background: linear-gradient(135deg, #f59e0b, #ea580c);
+}
+
+/* FIXED: Ensure text within buttons has proper spacing */
+.quick-action-btn .action-title {
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+  line-height: 1.2;
+}
+
+.quick-action-btn .action-description {
+  font-size: 0.75rem;
+  opacity: 0.9;
+  line-height: 1.3;
+}
+
+/* FIXED: Grid layout for better responsiveness */
+.quick-actions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+}
+
+/* Mobile responsive adjustments */
+@media (max-width: 768px) {
+  .quick-actions-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .quick-action-btn {
+    padding: 0.875rem;
+    gap: 0.5rem;
+  }
+}

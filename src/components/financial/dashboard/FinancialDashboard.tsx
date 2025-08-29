@@ -287,34 +287,34 @@ const FinancialDashboard: React.FC = () => {
                             <p className="card-subtitle">Common financial operations</p>
                         </div>
                     </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+                    <div className="quick-actions-grid">
                         <button className="quick-action-btn quick-action-primary" onClick={handleCreateInvoice}>
                             <Plus size={20} />
                             <div>
-                                <div style={{ fontWeight: '600', marginBottom: '0.25rem' }}>Create Invoice</div>
-                                <div style={{ fontSize: '0.75rem', opacity: 0.9 }}>Generate new customer invoices</div>
+                                <div className="action-title">Create Invoice</div>
+                                <div className="action-description">Generate new customer invoices</div>
                             </div>
                         </button>
 
                         <button className="quick-action-btn quick-action-success" onClick={handleApplyPayments}>
                             <CreditCard size={20} />
                             <div>
-                                <div style={{ fontWeight: '600', marginBottom: '0.25rem' }}>Apply Payments</div>
-                                <div style={{ fontSize: '0.75rem', opacity: 0.9 }}>Match payments to invoices</div>
+                                <div className="action-title">Apply Payments</div>
+                                <div className="action-description">Match payments to invoices</div>
                             </div>
                         </button>
 
                         <button className="quick-action-btn quick-action-warning" onClick={handleProcessWorkflow}>
                             <Clock size={20} />
                             <div>
-                                <div style={{ fontWeight: '600', marginBottom: '0.25rem' }}>Process Workflow</div>
-                                <div style={{ fontSize: '0.75rem', opacity: 0.9 }}>Handle overdue invoices</div>
+                                <div className="action-title">Process Workflow</div>
+                                <div className="action-description">Handle overdue invoices</div>
                             </div>
                         </button>
                     </div>
                 </div>
 
-                {/* Payment Matching Summary */}
+                {/* Payment Matching Summary - rest of the sidebar content remains the same */}
                 <div className="sidebar-content">
                     <div className="activity-card">
                         <div className="card-header">
