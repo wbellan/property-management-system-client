@@ -558,9 +558,9 @@ const FinancialReports: React.FC = () => {
     }
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-6" style={{ padding: '2rem' }}>
             {/* Header */}
-            <div className="welcome-card">
+            {/* <div className="welcome-card">
                 <div className="welcome-content">
                     <h1 className="welcome-title">Financial Reports</h1>
                     <p className="welcome-subtitle">Comprehensive financial analysis and reporting suite</p>
@@ -579,8 +579,34 @@ const FinancialReports: React.FC = () => {
                         </button>
                     </div>
                 </div>
-            </div>
+            </div> */}
+            <div style={{ marginBottom: '2rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+                    <div>
+                        <h1 style={{ fontSize: '2rem', fontWeight: '700', color: '#111827', margin: 0, marginBottom: '0.5rem' }}>
+                            Financial Reports
+                        </h1>
+                        <p style={{ color: '#6b7280', margin: 0, fontSize: '1rem' }}>
+                            Comprehensive financial analysis and reporting suite
+                        </p>
+                    </div>
 
+                    <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                        <button
+                            className="btn btn-primary"
+                            onClick={() => selectedReport && generateReportData(selectedReport.id)}
+                            disabled={loading}
+                        >
+                            <RefreshCw size={16} />
+                            Generate Report
+                        </button>
+                        <button className="btn btn-secondary">
+                            <Download size={16} />
+                            Export PDF
+                        </button>
+                    </div>
+                </div>
+            </div>
             {/* Date Range Selection */}
             <div className="chart-card">
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>

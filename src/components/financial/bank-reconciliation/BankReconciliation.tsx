@@ -266,18 +266,26 @@ const BankReconciliation: React.FC = () => {
     };
 
     return (
-        <div className="space-y-6">
-            {/* Header */}
-            <div className="welcome-card">
-                <div className="welcome-content">
-                    <h1 className="welcome-title">Bank Reconciliation</h1>
-                    <p className="welcome-subtitle">Match bank transactions with system records</p>
-                    <div className="welcome-actions">
-                        <button className="btn btn-secondary">
+        <div className="space-y-6" style={{ padding: '2rem' }}>
+            {/* Clean Header - consistent with main pages */}
+            <div style={{ marginBottom: '2rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+                    <div>
+                        <h1 style={{ fontSize: '2rem', fontWeight: '700', color: '#111827', margin: 0, marginBottom: '0.5rem' }}>
+                            Bank Reconciliation
+                        </h1>
+                        <p style={{ color: '#6b7280', margin: 0, fontSize: '1rem' }}>
+                            Match bank transactions with system records
+                        </p>
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                        <button className="btn btn-secondary" style={{ width: 'auto', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                             <RefreshCw size={16} />
                             Auto-Match
                         </button>
-                        <button className="btn btn-secondary">
+
+                        <button className="btn btn-primary" style={{ width: 'auto', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                             <Download size={16} />
                             Export Report
                         </button>

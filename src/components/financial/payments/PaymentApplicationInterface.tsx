@@ -251,13 +251,36 @@ const PaymentApplicationInterface: React.FC = () => {
     }
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-6" style={{ padding: '2rem' }}>
             {/* Header */}
-            <div className="welcome-card">
+            {/* <div className="welcome-card">
                 <div className="welcome-content">
                     <h1 className="welcome-title">Payment Application</h1>
                     <p className="welcome-subtitle">Match and apply payments to outstanding invoices</p>
                     <div className="welcome-actions">
+                        <button className="btn btn-primary" onClick={handleAutoMatch} disabled={autoMatchSuggestions.length === 0}>
+                            <Zap size={16} />
+                            Auto Match ({autoMatchSuggestions.length})
+                        </button>
+                        <button className="btn btn-secondary">
+                            <Shuffle size={16} />
+                            Bulk Apply
+                        </button>
+                    </div>
+                </div>
+            </div> */}
+            <div style={{ marginBottom: '2rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+                    <div>
+                        <h1 style={{ fontSize: '2rem', fontWeight: '700', color: '#111827', margin: 0, marginBottom: '0.5rem' }}>
+                            Payment Application
+                        </h1>
+                        <p style={{ color: '#6b7280', margin: 0, fontSize: '1rem' }}>
+                            Match and apply payments to outstanding invoices
+                        </p>
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
                         <button className="btn btn-primary" onClick={handleAutoMatch} disabled={autoMatchSuggestions.length === 0}>
                             <Zap size={16} />
                             Auto Match ({autoMatchSuggestions.length})

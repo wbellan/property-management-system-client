@@ -3496,3 +3496,134 @@ body {
 .animate-spin {
   animation: spin 1s linear infinite;
 }
+
+/* FIXED: Mobile responsiveness with proper boundaries */
+@media (max-width: 768px) {
+  .main-content-container {
+    padding: 0 1rem;
+  }
+  
+  .main-content-wrapper {
+    padding: 1rem 0;
+  }
+  
+  .header-content {
+    padding: 0 1rem;
+  }
+}
+
+/* FIXED: Ensure sidebar doesn't affect main content boundaries on desktop */
+@media (min-width: 1025px) {
+  .main-content-container {
+    /* Always stay within the header boundaries */
+    position: relative;
+  }
+}
+
+/* FIXED: Content grid and other elements should not exceed boundaries */
+.content-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 1.5rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+@media (max-width: 1024px) {
+  .content-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+}
+
+/* FIXED: Dashboard cards and other content elements */
+.dashboard-card,
+.chart-card,
+.activity-card,
+.quick-actions-card {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 1rem;
+  padding: 1.5rem;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* FIXED: Properties and other list containers */
+.properties-toolbar,
+.search-container {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.search-container {
+  position: relative;
+  flex: 1;
+  max-width: 24rem;
+}
+
+/* FIXED: Form elements and inputs should respect boundaries */
+.search-input,
+.form-input,
+.form-select,
+.form-textarea {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* FIXED: Mobile nav positioning should not affect content boundaries */
+.mobile-nav-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: none;
+}
+
+@media (max-width: 1024px) {
+  .mobile-nav-overlay {
+    display: block;
+  }
+  
+  /* Ensure main content doesn't shift when mobile nav is open */
+  .main-content-container {
+    position: relative;
+    z-index: 1;
+  }
+}
+
+/* FIXED: Consistent spacing and alignment */
+.properties-header,
+.dashboard-header,
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.properties-actions,
+.page-actions {
+  display: flex;
+  gap: 1rem;
+  flex-shrink: 0;
+}
+
+@media (max-width: 640px) {
+  .properties-header,
+  .dashboard-header,
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  
+  .properties-actions,
+  .page-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+}

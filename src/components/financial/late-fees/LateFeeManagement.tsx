@@ -315,9 +315,9 @@ const LateFeeManagement: React.FC = () => {
     });
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-6" style={{ padding: '2rem' }}>
             {/* Header */}
-            <div className="welcome-card">
+            {/* <div className="welcome-card">
                 <div className="welcome-content">
                     <h1 className="welcome-title">Late Fee Management</h1>
                     <p className="welcome-subtitle">Automated late fee application and tracking</p>
@@ -332,8 +332,30 @@ const LateFeeManagement: React.FC = () => {
                         </button>
                     </div>
                 </div>
-            </div>
+            </div> */}
+            <div style={{ marginBottom: '2rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+                    <div>
+                        <h1 style={{ fontSize: '2rem', fontWeight: '700', color: '#111827', margin: 0, marginBottom: '0.5rem' }}>
+                            Late Fee Management
+                        </h1>
+                        <p style={{ color: '#6b7280', margin: 0, fontSize: '1rem' }}>
+                            Automated late fee application and tracking
+                        </p>
+                    </div>
 
+                    <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                        <button className="btn btn-primary">
+                            <Plus size={16} />
+                            New Late Fee Rule
+                        </button>
+                        <button className="btn btn-secondary">
+                            <Settings size={16} />
+                            Configure Automation
+                        </button>
+                    </div>
+                </div>
+            </div>
             {/* Stats Cards */}
             <div className="stats-grid">
                 <div className="stat-card">

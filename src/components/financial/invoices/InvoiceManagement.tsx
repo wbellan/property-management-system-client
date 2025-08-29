@@ -221,13 +221,42 @@ const InvoiceManagement: React.FC = () => {
     }
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-6" style={{ padding: '2rem' }}>
             {/* Header */}
-            <div className="welcome-card">
+            {/* <div className="welcome-card">
                 <div className="welcome-content">
                     <h1 className="welcome-title">Invoice Management</h1>
                     <p className="welcome-subtitle">Create, manage, and track customer invoices</p>
                     <div className="welcome-actions">
+                        <button
+                            className="btn btn-primary"
+                            onClick={() => {
+                                setEditingInvoice(null);
+                                setShowCreateModal(true);
+                            }}
+                        >
+                            <Plus size={16} />
+                            Create Invoice
+                        </button>
+                        <button className="btn btn-secondary">
+                            <Send size={16} />
+                            Bulk Send
+                        </button>
+                    </div>
+                </div>
+            </div> */}
+            <div style={{ marginBottom: '2rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+                    <div>
+                        <h1 style={{ fontSize: '2rem', fontWeight: '700', color: '#111827', margin: 0, marginBottom: '0.5rem' }}>
+                            Invoice Management
+                        </h1>
+                        <p style={{ color: '#6b7280', margin: 0, fontSize: '1rem' }}>
+                            Create, manage, and track customer invoices
+                        </p>
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
                         <button
                             className="btn btn-primary"
                             onClick={() => {

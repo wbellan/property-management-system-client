@@ -179,13 +179,37 @@ const FinancialDashboard: React.FC = () => {
     }
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-6" style={{ padding: '2rem' }}>
             {/* Header */}
-            <div className="welcome-card">
+            {/* <div className="welcome-card">
                 <div className="welcome-content">
                     <h1 className="welcome-title">Financial Management</h1>
                     <p className="welcome-subtitle">Invoice workflow, payment application, and financial oversight</p>
                     <div className="welcome-actions">
+                        <button className="btn btn-secondary">
+                            <Upload size={16} />
+                            Import Data
+                        </button>
+                        <button className="btn btn-secondary">
+                            <Download size={16} />
+                            Export Reports
+                        </button>
+                    </div>
+                </div>
+            </div> */}
+
+            <div style={{ marginBottom: '2rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+                    <div>
+                        <h1 style={{ fontSize: '2rem', fontWeight: '700', color: '#111827', margin: 0, marginBottom: '0.5rem' }}>
+                            Financial Management
+                        </h1>
+                        <p style={{ color: '#6b7280', margin: 0, fontSize: '1rem' }}>
+                            Invoice workflow, payment application, and financial oversight
+                        </p>
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
                         <button className="btn btn-secondary">
                             <Upload size={16} />
                             Import Data
