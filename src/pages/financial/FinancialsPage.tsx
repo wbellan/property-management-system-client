@@ -10,12 +10,12 @@ import {
 } from 'lucide-react';
 
 // Import all financial components
-import FinancialDashboard from '../../components/financial/FinancialDashboard';
-import InvoiceManagement from '../../components/financial/InvoiceManagement';
-import PaymentApplicationInterface from '../../components/financial/PaymentApplicationInterface';
+import FinancialDashboard from '../../components/financial/dashboard/FinancialDashboard';
+import InvoiceManagement from '../../components/financial/invoices/InvoiceManagement';
+import PaymentApplicationInterface from '../../components/financial/payments/PaymentApplicationInterface';
 import BankReconciliation from '../../components/financial/bank-reconciliation/BankReconciliation';
-import ExpenseManagement from '../../components/financial/ExpenseManagement';
-import FinancialReports from '../../components/financial/FinancialReports';
+import ExpenseManagement from '../../components/financial/expenses/ExpenseManagement';
+import FinancialReports from '../../components/financial/reports/FinancialReports';
 
 const FinancialsPage: React.FC = () => {
     const location = useLocation();
