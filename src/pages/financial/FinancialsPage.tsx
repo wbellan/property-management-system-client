@@ -1,14 +1,19 @@
-// src/pages/financial/FinancialsPage.tsx (With Navigation)
 import React from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
-import { NavLink, useLocation } from 'react-router-dom';
-import { BarChart3, FileText, CreditCard, Building2, Receipt, TrendingUp } from 'lucide-react';
+import { Routes, Route, NavLink, useLocation } from 'react-router-dom';
 import {
-    FinancialDashboard,
-    InvoiceManagement,
-    PaymentApplicationInterface
-} from '../../components/financial';
-import BankReconciliation from '../../components/financial/BankReconciliation';
+    BarChart3,
+    FileText,
+    CreditCard,
+    DollarSign,
+    Receipt,
+    PieChart
+} from 'lucide-react';
+
+// Import all financial components
+import FinancialDashboard from '../../components/financial/FinancialDashboard';
+import InvoiceManagement from '../../components/financial/InvoiceManagement';
+import PaymentApplicationInterface from '../../components/financial/PaymentApplicationInterface';
+import BankReconciliation from '../../components/financial/bank-reconciliation/BankReconciliation';
 import ExpenseManagement from '../../components/financial/ExpenseManagement';
 import FinancialReports from '../../components/financial/FinancialReports';
 
@@ -34,7 +39,7 @@ const FinancialsPage: React.FC = () => {
         {
             path: '/financials/reconciliation',
             label: 'Reconciliation',
-            icon: Building2
+            icon: DollarSign
         },
         {
             path: '/financials/expenses',
@@ -44,17 +49,18 @@ const FinancialsPage: React.FC = () => {
         {
             path: '/financials/reports',
             label: 'Reports',
-            icon: TrendingUp
+            icon: PieChart
         }
     ];
 
     return (
-        <div className="space-y-6">
+        <div style={{ minHeight: '100vh' }}>
             {/* Financial Sub-Navigation */}
-            <div style={{ display: 'flex', gap: '1rem' }}>
+            <div style={{ display: 'flex', gap: '1rem', padding: '1rem 2rem', marginBottom: '1rem' }}>
                 {navItems.map((item) => {
                     const Icon = item.icon;
-                    const isActive = location.pathname === item.path;
+                    const isActive = location.pathname === item.path ||
+                        (location.pathname === '/financials' && item.path === '/financials/dashboard');
 
                     return (
                         <NavLink
@@ -69,28 +75,16 @@ const FinancialsPage: React.FC = () => {
                                 fontWeight: '500',
                                 transition: 'all 0.2s ease',
                                 textDecoration: 'none',
-                                ...(isActive
-                                    ? {
-                                        background: 'white',
-                                        color: '#1f2937',
-                                        boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)'
-                                    }
-                                    : {
-                                        background: 'rgba(255, 255, 255, 0.2)',
-                                        backdropFilter: 'blur(4px)',
-                                        // color: 'white'
-                                    }
-                                )
-                            }}
-                            onMouseEnter={(e) => {
-                                if (!isActive) {
-                                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.3)';
-                                }
-                            }}
-                            onMouseLeave={(e) => {
-                                if (!isActive) {
-                                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)';
-                                }
+                                background: isActive
+                                    ? 'white'
+                                    : 'rgba(255, 255, 255, 0.2)',
+                                color: isActive
+                                    ? '#1f2937'
+                                    : '#374151',
+                                backdropFilter: 'blur(4px)',
+                                boxShadow: isActive
+                                    ? '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)'
+                                    : 'none'
                             }}
                         >
                             <Icon size={20} />
@@ -102,14 +96,13 @@ const FinancialsPage: React.FC = () => {
 
             {/* Page Content */}
             <Routes>
-                <Route index element={<Navigate to="dashboard" replace />} />
+                <Route index element={<FinancialDashboard />} />
                 <Route path="dashboard" element={<FinancialDashboard />} />
                 <Route path="invoices" element={<InvoiceManagement />} />
                 <Route path="payments" element={<PaymentApplicationInterface />} />
                 <Route path="reconciliation" element={<BankReconciliation />} />
                 <Route path="expenses" element={<ExpenseManagement />} />
                 <Route path="reports" element={<FinancialReports />} />
-                <Route path="*" element={<Navigate to="dashboard" replace />} />
             </Routes>
         </div>
     );
