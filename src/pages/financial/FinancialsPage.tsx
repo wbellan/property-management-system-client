@@ -6,16 +6,23 @@ import {
     CreditCard,
     DollarSign,
     Receipt,
-    PieChart
+    PieChart,
+    RefreshCw,
+    AlertTriangle
 } from 'lucide-react';
 
 // Import all financial components
-import FinancialDashboard from '../../components/financial/dashboard/FinancialDashboard';
-import InvoiceManagement from '../../components/financial/invoices/InvoiceManagement';
-import PaymentApplicationInterface from '../../components/financial/payments/PaymentApplicationInterface';
+import {
+    InvoiceManagement,
+    PaymentApplicationInterface,
+    FinancialDashboard
+} from '../../components/financial';
+
 import BankReconciliation from '../../components/financial/bank-reconciliation/BankReconciliation';
 import ExpenseManagement from '../../components/financial/expenses/ExpenseManagement';
 import FinancialReports from '../../components/financial/reports/FinancialReports';
+import AutomatedPaymentProcessing from '../../components/financial/payments/AutomatedPaymentProcessing';
+import LateFeeManagement from '../../components/financial/late-fees/LateFeeManagement';
 
 const FinancialsPage: React.FC = () => {
     const location = useLocation();
@@ -40,6 +47,16 @@ const FinancialsPage: React.FC = () => {
             path: '/financials/reconciliation',
             label: 'Reconciliation',
             icon: DollarSign
+        },
+        {
+            path: '/financials/automation',
+            label: 'Automation',
+            icon: RefreshCw
+        },
+        {
+            path: '/financials/late-fees',
+            label: 'Late Fees',
+            icon: AlertTriangle
         },
         {
             path: '/financials/expenses',
@@ -96,11 +113,12 @@ const FinancialsPage: React.FC = () => {
 
             {/* Page Content */}
             <Routes>
-                <Route index element={<FinancialDashboard />} />
                 <Route path="dashboard" element={<FinancialDashboard />} />
                 <Route path="invoices" element={<InvoiceManagement />} />
                 <Route path="payments" element={<PaymentApplicationInterface />} />
                 <Route path="reconciliation" element={<BankReconciliation />} />
+                <Route path="automation" element={<AutomatedPaymentProcessing />} />
+                <Route path="late-fees" element={<LateFeeManagement />} />
                 <Route path="expenses" element={<ExpenseManagement />} />
                 <Route path="reports" element={<FinancialReports />} />
             </Routes>
