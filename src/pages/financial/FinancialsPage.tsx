@@ -10,7 +10,8 @@ import {
     RefreshCw,
     AlertTriangle,
     ChevronRight,
-    Banknote
+    Banknote,
+    BookOpen
 } from 'lucide-react';
 
 // Import all financial components
@@ -18,7 +19,8 @@ import {
     InvoiceManagement,
     PaymentApplicationInterface,
     FinancialDashboard,
-    BankingManagementInterface
+    BankingManagementInterface,
+    ChartOfAccountsManager
 } from '../../components/financial';
 
 import BankReconciliation from '../../components/financial/bank-reconciliation/BankReconciliation';
@@ -49,6 +51,11 @@ const FinancialsPage: React.FC = () => {
                     path: '/financials/banking',
                     label: 'Bank Accounts',
                     icon: Banknote
+                },
+                {
+                    path: '/financials/chart-accounts', 
+                    label: 'Chart of Accounts',
+                    icon: BookOpen  // Or TreePine
                 }
             ]
         },
@@ -272,6 +279,7 @@ const FinancialsPage: React.FC = () => {
                     <Route path="expenses" element={<ExpenseManagement />} />
                     <Route path="reports" element={<FinancialReports />} />
                     <Route path="banking" element={<BankingManagementInterface />} />
+                    <Route path="chart-accounts" element={<ChartOfAccountsManager />} />
                 </Routes>
             </div>
         </div>

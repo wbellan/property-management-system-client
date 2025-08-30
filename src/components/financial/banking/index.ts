@@ -1,2 +1,2 @@
 export { default as BankingManagementInterface } from './BankingManagementInterface';
-// Add future banking components here
+export { default as ChartOfAccountsManager } from './ChartOfAccountsManager';
