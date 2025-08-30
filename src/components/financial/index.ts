@@ -3,6 +3,7 @@
 export { default as FinancialDashboard } from './dashboard/FinancialDashboard';
 export { default as InvoiceManagement } from './invoices/InvoiceManagement';
 export { default as PaymentApplicationInterface } from './payments/PaymentApplicationInterface';
+export { default as PaymentRecordingInterface } from './payments/PaymentRecordingInterface';
 export { default as FinancialNavigation } from './shared/FinancialNavigation';
 export { default as FinancialLayoutWrapper } from './shared/FinancialLayoutWrapper';
 export * from './banking';

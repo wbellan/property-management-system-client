@@ -23,7 +23,8 @@ import {
     FinancialDashboard,
     BankingManagementInterface,
     ChartOfAccountsManager,
-    LedgerEntryManager
+    LedgerEntryManager,
+    PaymentRecordingInterface
 } from '../../components/financial';
 
 import BankReconciliation from '../../components/financial/bank-reconciliation/BankReconciliation';
@@ -77,8 +78,13 @@ const FinancialsPage: React.FC = () => {
                 },
                 {
                     path: '/financials/payments',
-                    label: 'Payments',
+                    label: 'Payment Applications',
                     icon: CreditCard
+                },
+                {
+                    path: '/financials/record-payments',
+                    label: 'Record Payments',
+                    icon: Receipt
                 },
                 {
                     path: '/financials/reconciliation',
@@ -289,6 +295,7 @@ const FinancialsPage: React.FC = () => {
                     <Route path="banking" element={<BankingManagementInterface />} />
                     <Route path="chart-accounts" element={<ChartOfAccountsManager />} />
                     <Route path="ledger" element={<LedgerEntryManager />} />
+                    <Route path="record-payments" element={<PaymentRecordingInterface />} />
                 </Routes>
             </div>
         </div>
