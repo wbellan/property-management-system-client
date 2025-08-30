@@ -5,6 +5,7 @@ export { default as InvoiceManagement } from './invoices/InvoiceManagement';
 export { default as PaymentApplicationInterface } from './payments/PaymentApplicationInterface';
 export { default as FinancialNavigation } from './shared/FinancialNavigation';
 export { default as FinancialLayoutWrapper } from './shared/FinancialLayoutWrapper';
+export * from './banking';
 
 // Re-export types for convenience
 export type {
