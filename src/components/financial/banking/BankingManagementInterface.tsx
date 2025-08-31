@@ -197,7 +197,6 @@ const BankingManagementInterface: React.FC = () => {
     };
 
     const formatCurrency = (amount: number) => {
-        console.log('Amount', amount);
         return new Intl.NumberFormat('en-US', {
             style: 'currency',
             currency: 'USD'

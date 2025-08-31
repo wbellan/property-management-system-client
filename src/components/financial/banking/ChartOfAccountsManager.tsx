@@ -2,37 +2,32 @@ import React, { useState, useEffect } from 'react';
 import {
     Plus,
     Building2,
-    TreePine,
+    BookOpen,
     Eye,
     Edit,
     Trash2,
     X,
     Save,
-    ChevronDown,
-    ChevronRight,
     DollarSign,
-    Settings,
-    BookOpen,
     CheckCircle,
-    AlertTriangle
+    AlertTriangle,
+    RefreshCw,
+    Loader2,
+    ChevronRight,
+    ChevronDown,
+    Settings,
+    TrendingUp,
+    ArrowUp,
+    ArrowDown
 } from 'lucide-react';
+import {
+    bankingService,
+    type ChartAccount,
+    type CreateChartAccountData
+} from '../../../services/api/bankingService';
+import { apiService } from '../../../services/api/apiService';
 
-// Types based on your schema
-interface ChartAccount {
-    id: string;
-    entityId: string;
-    accountCode: string;
-    accountName: string;
-    description?: string;
-    accountType: 'ASSET' | 'LIABILITY' | 'EQUITY' | 'REVENUE' | 'EXPENSE';
-    parentId?: string;
-    isActive: boolean;
-    createdAt: string;
-    updatedAt: string;
-    children?: ChartAccount[];
-    currentBalance?: number;
-}
-
+// Entity interface (reuse from existing services)
 interface Entity {
     id: string;
     name: string;
@@ -40,87 +35,251 @@ interface Entity {
     entityType: string;
 }
 
+// Extended ChartAccount with children for tree view
+interface ChartAccountWithChildren extends ChartAccount {
+    children?: ChartAccountWithChildren[];
+}
+
 const ChartOfAccountsManager: React.FC = () => {
-    const [accounts, setAccounts] = useState<ChartAccount[]>([]);
+    const [chartAccounts, setChartAccounts] = useState<ChartAccount[]>([]);
+    const [hierarchicalAccounts, setHierarchicalAccounts] = useState<ChartAccountWithChildren[]>([]);
     const [entities, setEntities] = useState<Entity[]>([]);
     const [selectedEntity, setSelectedEntity] = useState<string>('');
     const [loading, setLoading] = useState(true);
     const [showAddModal, setShowAddModal] = useState(false);
+    const [showViewModal, setShowViewModal] = useState(false);
     const [editingAccount, setEditingAccount] = useState<ChartAccount | null>(null);
+    const [viewingAccount, setViewingAccount] = useState<ChartAccount | null>(null);
+    const [parentAccountForAdd, setParentAccountForAdd] = useState<string | null>(null);
     const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
-    const [showCreateDefault, setShowCreateDefault] = useState(false);
-    const [formData, setFormData] = useState({
+    const [formData, setFormData] = useState<CreateChartAccountData>({
         accountCode: '',
         accountName: '',
-        description: '',
-        accountType: 'ASSET' as const,
-        parentId: ''
+        accountType: 'ASSET',
+        parentId: '',
+        description: ''
     });
+    const [error, setError] = useState<string | null>(null);
+    const [success, setSuccess] = useState<string | null>(null);
+    const [submitting, setSubmitting] = useState(false);
+    const [refreshing, setRefreshing] = useState(false);
 
-    // Mock data for demo
+    // Load initial data
     useEffect(() => {
-        setTimeout(() => {
-            setEntities([
-                { id: '1', name: 'Sunset Properties LLC', legalName: 'Sunset Properties LLC', entityType: 'LLC' },
-                { id: '2', name: 'Downtown Investments', legalName: 'Downtown Investments Inc.', entityType: 'CORPORATION' },
-                { id: '3', name: 'Harbor View Properties', legalName: 'Harbor View Properties Partnership', entityType: 'PARTNERSHIP' }
-            ]);
-            setSelectedEntity('1');
-            setAccounts([
-                // Assets
-                { id: '1', entityId: '1', accountCode: '1000', accountName: 'Assets', accountType: 'ASSET', isActive: true, createdAt: '2024-01-15', updatedAt: '2024-01-15', currentBalance: 175000 },
-                { id: '2', entityId: '1', accountCode: '1001', accountName: 'Cash and Cash Equivalents', accountType: 'ASSET', parentId: '1', isActive: true, createdAt: '2024-01-15', updatedAt: '2024-01-15', currentBalance: 125000 },
-                { id: '3', entityId: '1', accountCode: '1100', accountName: 'Accounts Receivable', accountType: 'ASSET', parentId: '1', isActive: true, createdAt: '2024-01-15', updatedAt: '2024-01-15', currentBalance: 15000 },
-                { id: '4', entityId: '1', accountCode: '1200', accountName: 'Security Deposits Held', accountType: 'ASSET', parentId: '1', isActive: true, createdAt: '2024-01-15', updatedAt: '2024-01-15', currentBalance: 35000 },
-
-                // Liabilities
-                { id: '5', entityId: '1', accountCode: '2000', accountName: 'Liabilities', accountType: 'LIABILITY', isActive: true, createdAt: '2024-01-15', updatedAt: '2024-01-15', currentBalance: 42000 },
-                { id: '6', entityId: '1', accountCode: '2100', accountName: 'Security Deposits Payable', accountType: 'LIABILITY', parentId: '5', isActive: true, createdAt: '2024-01-15', updatedAt: '2024-01-15', currentBalance: 35000 },
-                { id: '7', entityId: '1', accountCode: '2200', accountName: 'Accounts Payable', accountType: 'LIABILITY', parentId: '5', isActive: true, createdAt: '2024-01-15', updatedAt: '2024-01-15', currentBalance: 7000 },
-
-                // Equity
-                { id: '8', entityId: '1', accountCode: '3000', accountName: 'Equity', accountType: 'EQUITY', isActive: true, createdAt: '2024-01-15', updatedAt: '2024-01-15', currentBalance: 100000 },
-                { id: '9', entityId: '1', accountCode: '3100', accountName: 'Owner Equity', accountType: 'EQUITY', parentId: '8', isActive: true, createdAt: '2024-01-15', updatedAt: '2024-01-15', currentBalance: 80000 },
-                { id: '10', entityId: '1', accountCode: '3200', accountName: 'Retained Earnings', accountType: 'EQUITY', parentId: '8', isActive: true, createdAt: '2024-01-15', updatedAt: '2024-01-15', currentBalance: 20000 },
-
-                // Revenue
-                { id: '11', entityId: '1', accountCode: '4000', accountName: 'Revenue', accountType: 'REVENUE', isActive: true, createdAt: '2024-01-15', updatedAt: '2024-01-15', currentBalance: 25000 },
-                { id: '12', entityId: '1', accountCode: '4100', accountName: 'Rental Income', accountType: 'REVENUE', parentId: '11', isActive: true, createdAt: '2024-01-15', updatedAt: '2024-01-15', currentBalance: 22000 },
-                { id: '13', entityId: '1', accountCode: '4200', accountName: 'Late Fees', accountType: 'REVENUE', parentId: '11', isActive: true, createdAt: '2024-01-15', updatedAt: '2024-01-15', currentBalance: 3000 },
-
-                // Expenses
-                { id: '14', entityId: '1', accountCode: '5000', accountName: 'Expenses', accountType: 'EXPENSE', isActive: true, createdAt: '2024-01-15', updatedAt: '2024-01-15', currentBalance: 8000 },
-                { id: '15', entityId: '1', accountCode: '5100', accountName: 'Maintenance and Repairs', accountType: 'EXPENSE', parentId: '14', isActive: true, createdAt: '2024-01-15', updatedAt: '2024-01-15', currentBalance: 4500 },
-                { id: '16', entityId: '1', accountCode: '5200', accountName: 'Utilities', accountType: 'EXPENSE', parentId: '14', isActive: true, createdAt: '2024-01-15', updatedAt: '2024-01-15', currentBalance: 2000 },
-                { id: '17', entityId: '1', accountCode: '5300', accountName: 'Insurance', accountType: 'EXPENSE', parentId: '14', isActive: true, createdAt: '2024-01-15', updatedAt: '2024-01-15', currentBalance: 1500 }
-            ]);
-            setExpandedNodes(new Set(['1', '5', '8', '11', '14'])); // Expand main categories by default
-            setLoading(false);
-        }, 1000);
+        loadInitialData();
     }, []);
 
-    const buildAccountHierarchy = (accounts: ChartAccount[]): ChartAccount[] => {
-        const accountMap = new Map<string, ChartAccount>();
-        const rootAccounts: ChartAccount[] = [];
+    // Load chart accounts when entity changes
+    useEffect(() => {
+        if (selectedEntity) {
+            loadChartAccounts();
+        }
+    }, [selectedEntity]);
 
-        // Create map of all accounts with children arrays
+    // Build hierarchy when accounts change
+    useEffect(() => {
+        const hierarchy = buildAccountHierarchy(chartAccounts);
+        setHierarchicalAccounts(hierarchy);
+
+        // Auto-expand main account types if not already expanded
+        if (expandedNodes.size === 0 && hierarchy.length > 0) {
+            const rootNodes = new Set(hierarchy.map(acc => acc.id));
+            setExpandedNodes(rootNodes);
+        }
+    }, [chartAccounts]);
+
+    const loadInitialData = async () => {
+        try {
+            setLoading(true);
+            const entitiesResponse = await apiService.getEntities();
+            setEntities(entitiesResponse.data || []);
+
+            if (entitiesResponse.data && entitiesResponse.data.length > 0) {
+                setSelectedEntity(entitiesResponse.data[0].id);
+            }
+        } catch (err) {
+            setError(`Failed to load entities: ${err.message}`);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const loadChartAccounts = async () => {
+        if (!selectedEntity) return;
+
+        try {
+            setRefreshing(true);
+            const accounts = await bankingService.getChartAccounts(selectedEntity);
+            setChartAccounts(accounts);
+        } catch (err) {
+            setError(`Failed to load chart of accounts: ${err.message}`);
+        } finally {
+            setRefreshing(false);
+        }
+    };
+
+    const buildAccountHierarchy = (accounts: ChartAccount[]): ChartAccountWithChildren[] => {
+        const accountMap = new Map<string, ChartAccountWithChildren>();
+        const rootAccounts: ChartAccountWithChildren[] = [];
+
+        // Create map with children arrays
         accounts.forEach(account => {
             accountMap.set(account.id, { ...account, children: [] });
         });
 
         // Build hierarchy
         accounts.forEach(account => {
+            const accountWithChildren = accountMap.get(account.id)!;
             if (account.parentId) {
                 const parent = accountMap.get(account.parentId);
                 if (parent && parent.children) {
-                    parent.children.push(accountMap.get(account.id)!);
+                    parent.children.push(accountWithChildren);
                 }
             } else {
-                rootAccounts.push(accountMap.get(account.id)!);
+                rootAccounts.push(accountWithChildren);
             }
         });
 
-        return rootAccounts.sort((a, b) => a.accountCode.localeCompare(b.accountCode));
+        // Sort by account code
+        const sortAccounts = (accounts: ChartAccountWithChildren[]) => {
+            accounts.sort((a, b) => a.accountCode.localeCompare(b.accountCode));
+            accounts.forEach(account => {
+                if (account.children && account.children.length > 0) {
+                    sortAccounts(account.children);
+                }
+            });
+        };
+
+        sortAccounts(rootAccounts);
+        return rootAccounts;
+    };
+
+    const handleEntityChange = (entityId: string) => {
+        setSelectedEntity(entityId);
+        setChartAccounts([]);
+        setExpandedNodes(new Set());
+    };
+
+    const handleAddAccount = (parentId?: string) => {
+        setEditingAccount(null);
+        setParentAccountForAdd(parentId || null);
+
+        // If adding as child, inherit parent's account type for compatibility
+        let defaultAccountType = 'ASSET';
+        if (parentId) {
+            const parent = chartAccounts.find(acc => acc.id === parentId);
+            if (parent) {
+                defaultAccountType = parent.accountType;
+            }
+        }
+
+        setFormData({
+            accountCode: '',
+            accountName: '',
+            accountType: defaultAccountType as any,
+            parentId: parentId || '',
+            description: ''
+        });
+        setShowAddModal(true);
+    };
+
+    const handleEditAccount = (account: ChartAccount) => {
+        setEditingAccount(account);
+        setParentAccountForAdd(null);
+        setFormData({
+            accountCode: account.accountCode,
+            accountName: account.accountName,
+            accountType: account.accountType,
+            parentId: account.parentId || '',
+            description: account.description || ''
+        });
+        setShowAddModal(true);
+    };
+
+    const handleViewAccount = (account: ChartAccount) => {
+        setViewingAccount(account);
+        setShowViewModal(true);
+    };
+
+    const handleSaveAccount = async () => {
+        if (!selectedEntity) return;
+
+        try {
+            setSubmitting(true);
+            setError(null);
+
+            // Prepare data with proper null handling for parentId
+            const dataToSend = {
+                ...formData,
+                parentId: formData.parentId && formData.parentId.trim() !== '' ? formData.parentId : null
+            };
+
+            if (editingAccount) {
+                // Update existing account
+                const updatedAccount = await bankingService.updateChartAccount(
+                    selectedEntity,
+                    editingAccount.id,
+                    dataToSend
+                );
+                setChartAccounts(prev => prev.map(acc =>
+                    acc.id === editingAccount.id ? updatedAccount : acc
+                ));
+                setSuccess('Chart account updated successfully!');
+            } else {
+                // Create new account
+                const newAccount = await bankingService.createChartAccount(selectedEntity, dataToSend);
+                setChartAccounts(prev => [...prev, newAccount]);
+                setSuccess('Chart account created successfully!');
+            }
+
+            setShowAddModal(false);
+            setEditingAccount(null);
+            setParentAccountForAdd(null);
+        } catch (err) {
+            setError(`Failed to save account: ${err.message}`);
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    const handleDeleteAccount = async (account: ChartAccount) => {
+        const hasChildren = chartAccounts.some(acc => acc.parentId === account.id);
+
+        if (hasChildren) {
+            setError('Cannot deactivate account with active child accounts. Please deactivate child accounts first.');
+            return;
+        }
+
+        const confirmMessage = `Are you sure you want to deactivate "${account.accountName}"? This will mark the account as inactive but preserve all transaction history.`;
+
+        if (window.confirm(confirmMessage)) {
+            try {
+                setSubmitting(true);
+                await bankingService.deactivateChartAccount(selectedEntity, account.id);
+                setChartAccounts(prev => prev.filter(acc => acc.id !== account.id));
+                setSuccess('Chart account deactivated successfully!');
+            } catch (err) {
+                setError(`Failed to deactivate account: ${err.message}`);
+            } finally {
+                setSubmitting(false);
+            }
+        }
+    };
+
+    const handleRefresh = () => {
+        loadChartAccounts();
+    };
+
+    const toggleNodeExpansion = (nodeId: string) => {
+        setExpandedNodes(prev => {
+            const newSet = new Set(prev);
+            if (newSet.has(nodeId)) {
+                newSet.delete(nodeId);
+            } else {
+                newSet.add(nodeId);
+            }
+            return newSet;
+        });
     };
 
     const getAccountTypeColor = (type: string) => {
@@ -129,20 +288,20 @@ const ChartOfAccountsManager: React.FC = () => {
             'LIABILITY': 'stat-icon-orange',
             'EQUITY': 'stat-icon-purple',
             'REVENUE': 'stat-icon-green',
-            'EXPENSE': 'stat-icon-orange'
+            'EXPENSE': 'stat-icon-red'
         };
         return colors[type] || 'stat-icon-blue';
     };
 
     const getAccountTypeIcon = (type: string) => {
-        const icons = {
-            'ASSET': DollarSign,
-            'LIABILITY': AlertTriangle,
-            'EQUITY': BookOpen,
-            'REVENUE': CheckCircle,
-            'EXPENSE': Settings
-        };
-        return icons[type] || DollarSign;
+        switch (type) {
+            case 'ASSET': return DollarSign;
+            case 'LIABILITY': return AlertTriangle;
+            case 'EQUITY': return BookOpen;
+            case 'REVENUE': return CheckCircle;
+            case 'EXPENSE': return Settings;
+            default: return DollarSign;
+        }
     };
 
     const formatCurrency = (amount: number) => {
@@ -152,80 +311,44 @@ const ChartOfAccountsManager: React.FC = () => {
         }).format(amount);
     };
 
-    const handleEntityChange = (entityId: string) => {
-        setSelectedEntity(entityId);
-        // In real app, fetch chart of accounts for this entity
-    };
+    const getAccountTypeTotals = () => {
+        const totals = {
+            ASSET: 0,
+            LIABILITY: 0,
+            EQUITY: 0,
+            REVENUE: 0,
+            EXPENSE: 0
+        };
 
-    const handleAddAccount = (parentId?: string) => {
-        setFormData({
-            accountCode: '',
-            accountName: '',
-            description: '',
-            accountType: 'ASSET',
-            parentId: parentId || ''
+        chartAccounts.forEach(account => {
+            if (account.currentBalance) {
+                const balance = typeof account.currentBalance === 'string'
+                    ? parseFloat(account.currentBalance)
+                    : account.currentBalance;
+                totals[account.accountType] += (isNaN(balance) ? 0 : balance);
+            }
         });
-        setShowAddModal(true);
+
+        return totals;
     };
 
-    const handleEditAccount = (account: ChartAccount) => {
-        setEditingAccount(account);
-        setFormData({
-            accountCode: account.accountCode,
-            accountName: account.accountName,
-            description: account.description || '',
-            accountType: account.accountType,
-            parentId: account.parentId || ''
-        });
-        setShowAddModal(true);
-    };
-
-    const handleSaveAccount = () => {
-        // In real app, make API call to save/update account
-        console.log('Saving account:', formData);
-        setShowAddModal(false);
-        setEditingAccount(null);
-    };
-
-    const handleDeleteAccount = (accountId: string) => {
-        if (window.confirm('Are you sure you want to delete this account? This action cannot be undone.')) {
-            // In real app, make API call to delete account
-            setAccounts(prev => prev.filter(acc => acc.id !== accountId));
-        }
-    };
-
-    const handleCreateDefaultChart = () => {
-        if (window.confirm('This will create a standard chart of accounts for this entity. Continue?')) {
-            // In real app, make API call to create default chart
-            console.log('Creating default chart for entity:', selectedEntity);
-            setShowCreateDefault(false);
-        }
-    };
-
-    const toggleNode = (nodeId: string) => {
-        const newExpanded = new Set(expandedNodes);
-        if (newExpanded.has(nodeId)) {
-            newExpanded.delete(nodeId);
-        } else {
-            newExpanded.add(nodeId);
-        }
-        setExpandedNodes(newExpanded);
-    };
-
-    const renderAccountNode = (account: ChartAccount, level = 0) => {
-        const hasChildren = account.children && account.children.length > 0;
+    const renderAccountNode = (account: ChartAccountWithChildren, level: number = 0) => {
         const isExpanded = expandedNodes.has(account.id);
+        const hasChildren = account.children && account.children.length > 0;
         const IconComponent = getAccountTypeIcon(account.accountType);
 
         return (
-            <div key={account.id}>
-                <div className="card" style={{
-                    padding: level === 0 ? '1.5rem' : '1rem',
-                    marginBottom: '0.5rem',
-                    marginLeft: level > 0 ? `${level * 2}rem` : '0',
-                    border: level > 0 ? '1px solid var(--gray-200)' : '1px solid var(--gray-300)',
-                    backgroundColor: level > 0 ? 'rgba(249, 250, 251, 0.5)' : undefined
-                }}>
+            <div key={account.id} style={{ marginBottom: '0.5rem' }}>
+                <div
+                    className="card"
+                    style={{
+                        padding: '1rem',
+                        marginLeft: `${level * 1.5}rem`,
+                        display: 'block',
+                        backgroundColor: level > 0 ? 'var(--gray-25)' : 'white',
+                        border: level > 0 ? '1px solid var(--gray-200)' : '1px solid var(--gray-300)'
+                    }}
+                >
                     <div style={{
                         display: 'flex',
                         alignItems: 'center',
@@ -233,211 +356,212 @@ const ChartOfAccountsManager: React.FC = () => {
                         flexWrap: 'wrap',
                         gap: '1rem'
                     }}>
-                        {/* Left side - Account info */}
-                        <div style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '0.75rem',
-                            flex: '1',
-                            minWidth: '300px'
-                        }}>
-                            {/* Expand/collapse button */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flex: 1, minWidth: '300px' }}>
                             {hasChildren && (
                                 <button
-                                    onClick={() => toggleNode(account.id)}
+                                    onClick={() => toggleNodeExpansion(account.id)}
                                     style={{
                                         background: 'none',
                                         border: 'none',
-                                        cursor: 'pointer',
                                         padding: '0.25rem',
+                                        cursor: 'pointer',
                                         borderRadius: '0.25rem',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        color: 'var(--gray-600)',
-                                        flexShrink: 0
+                                        color: 'var(--gray-500)'
                                     }}
                                 >
-                                    {isExpanded ?
-                                        <ChevronDown style={{ width: '1rem', height: '1rem' }} /> :
+                                    {isExpanded ? (
+                                        <ChevronDown style={{ width: '1rem', height: '1rem' }} />
+                                    ) : (
                                         <ChevronRight style={{ width: '1rem', height: '1rem' }} />
-                                    }
+                                    )}
                                 </button>
                             )}
+                            {!hasChildren && <div style={{ width: '1.5rem' }} />}
 
-                            {/* Account icon */}
-                            <div className={`stat-icon ${getAccountTypeColor(account.accountType)}`}
-                                style={{
-                                    width: level === 0 ? '2.5rem' : '2rem',
-                                    height: level === 0 ? '2.5rem' : '2rem',
-                                    flexShrink: 0
-                                }}>
-                                <IconComponent style={{
-                                    width: level === 0 ? '1.25rem' : '1rem',
-                                    height: level === 0 ? '1.25rem' : '1rem'
-                                }} />
+                            <div className={`stat-icon ${getAccountTypeColor(account.accountType)}`} style={{ width: '2.5rem', height: '2.5rem', flexShrink: 0 }}>
+                                <IconComponent style={{ width: '1.25rem', height: '1.25rem' }} />
                             </div>
 
-                            {/* Account details */}
                             <div style={{ flex: 1, minWidth: 0 }}>
+                                <h3 style={{ fontSize: '1rem', fontWeight: '600', color: 'var(--gray-900)', margin: 0, marginBottom: '0.25rem' }}>
+                                    {account.accountCode} - {account.accountName}
+                                </h3>
                                 <div style={{
-                                    display: 'flex',
-                                    alignItems: 'baseline',
-                                    gap: '0.75rem',
-                                    marginBottom: '0.25rem',
-                                    flexWrap: 'wrap'
-                                }}>
-                                    <span style={{
-                                        fontSize: level === 0 ? '1.125rem' : '1rem',
-                                        fontWeight: level === 0 ? '700' : '600',
-                                        color: 'var(--gray-900)',
-                                        flexShrink: 0
-                                    }}>
-                                        {account.accountCode}
-                                    </span>
-                                    <span style={{
-                                        fontSize: level === 0 ? '1.125rem' : '1rem',
-                                        fontWeight: level === 0 ? '600' : '500',
-                                        color: 'var(--gray-900)',
-                                        wordBreak: 'break-word'
-                                    }}>
-                                        {account.accountName}
-                                    </span>
-                                </div>
-                                <div style={{
-                                    fontSize: '0.875rem',
-                                    color: 'var(--gray-500)',
                                     display: 'flex',
                                     alignItems: 'center',
-                                    gap: '0.5rem',
+                                    gap: '0.75rem',
+                                    fontSize: '0.75rem',
+                                    color: 'var(--gray-500)',
                                     flexWrap: 'wrap'
                                 }}>
-                                    <span style={{
-                                        background: 'var(--gray-100)',
-                                        padding: '0.125rem 0.5rem',
-                                        borderRadius: '0.375rem',
-                                        fontSize: '0.75rem',
-                                        fontWeight: '500'
-                                    }}>
-                                        {account.accountType}
-                                    </span>
-                                    {account.description && (
-                                        <span style={{ wordBreak: 'break-word' }}>
-                                            {account.description}
-                                        </span>
+                                    <span>{account.accountType}</span>
+                                    {account.parentId && (
+                                        <>
+                                            <span>•</span>
+                                            <span>Sub-account</span>
+                                        </>
+                                    )}
+                                    {!account.isActive && (
+                                        <>
+                                            <span>•</span>
+                                            <span style={{ color: '#dc2626', fontWeight: '500' }}>INACTIVE</span>
+                                        </>
                                     )}
                                 </div>
                             </div>
                         </div>
 
-                        {/* Right side - Balance and actions */}
-                        <div style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '1rem',
-                            flexShrink: 0
-                        }}>
-                            {/* Balance */}
-                            {account.currentBalance !== undefined && (
-                                <div style={{ textAlign: 'right', minWidth: '100px' }}>
-                                    <div style={{
-                                        fontSize: level === 0 ? '1.125rem' : '1rem',
-                                        fontWeight: '600',
-                                        color: 'var(--gray-900)'
-                                    }}>
-                                        {formatCurrency(account.currentBalance)}
-                                    </div>
-                                    <div style={{ fontSize: '0.75rem', color: 'var(--gray-500)' }}>
-                                        Balance
-                                    </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexShrink: 0 }}>
+                            <div style={{ textAlign: 'right' }}>
+                                <div style={{ fontSize: '1.125rem', fontWeight: '700', color: 'var(--gray-900)' }}>
+                                    {formatCurrency(
+                                        typeof account.currentBalance === 'string'
+                                            ? parseFloat(account.currentBalance) || 0
+                                            : account.currentBalance || 0
+                                    )}
                                 </div>
-                            )}
+                                <div style={{ fontSize: '0.75rem', color: 'var(--gray-500)' }}>
+                                    Current Balance
+                                </div>
+                            </div>
 
-                            {/* Action buttons */}
-                            <div style={{ display: 'flex', gap: '0.5rem', flexShrink: 0 }}>
-                                {level > 0 && (
-                                    <button
-                                        className="maintenance-action-btn"
-                                        onClick={() => handleAddAccount(account.id)}
-                                        title="Add Sub-Account"
-                                    >
-                                        <Plus style={{ width: '0.875rem', height: '0.875rem' }} />
-                                    </button>
-                                )}
+                            <div style={{ display: 'flex', gap: '0.5rem' }}>
                                 <button
                                     className="maintenance-action-btn"
-                                    title="View Details"
+                                    onClick={() => handleAddAccount(account.id)}
+                                    title="Add Sub-Account"
+                                    disabled={submitting}
                                 >
-                                    <Eye style={{ width: '1rem', height: '1rem' }} />
+                                    <Plus style={{ width: '0.875rem', height: '0.875rem' }} />
+                                </button>
+                                <button
+                                    className="maintenance-action-btn"
+                                    onClick={() => handleViewAccount(account)}
+                                    title="View Details"
+                                    disabled={submitting}
+                                >
+                                    <Eye style={{ width: '0.875rem', height: '0.875rem' }} />
                                 </button>
                                 <button
                                     className="maintenance-action-btn"
                                     onClick={() => handleEditAccount(account)}
                                     title="Edit Account"
+                                    disabled={submitting}
                                 >
-                                    <Edit style={{ width: '1rem', height: '1rem' }} />
+                                    <Edit style={{ width: '0.875rem', height: '0.875rem' }} />
                                 </button>
-                                {level > 0 && (
-                                    <button
-                                        className="maintenance-action-btn"
-                                        onClick={() => handleDeleteAccount(account.id)}
-                                        title="Delete Account"
-                                        style={{ color: '#dc2626' }}
-                                    >
-                                        <Trash2 style={{ width: '1rem', height: '1rem' }} />
-                                    </button>
-                                )}
+                                <button
+                                    className="maintenance-action-btn"
+                                    onClick={() => handleDeleteAccount(account)}
+                                    title="Deactivate Account"
+                                    style={{ color: '#dc2626' }}
+                                    disabled={submitting}
+                                >
+                                    <Trash2 style={{ width: '0.875rem', height: '0.875rem' }} />
+                                </button>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                {/* Render children */}
-                {hasChildren && isExpanded && (
-                    <div style={{ marginLeft: '1rem' }}>
-                        {account.children?.map(child =>
-                            renderAccountNode(child, level + 1)
-                        )}
+                {/* Render children if expanded */}
+                {isExpanded && hasChildren && (
+                    <div style={{ marginTop: '0.5rem' }}>
+                        {account.children!.map(child => renderAccountNode(child, level + 1))}
                     </div>
                 )}
             </div>
         );
     };
 
+    // Auto-clear messages after 5 seconds
+    useEffect(() => {
+        if (success || error) {
+            const timer = setTimeout(() => {
+                setSuccess(null);
+                setError(null);
+            }, 5000);
+            return () => clearTimeout(timer);
+        }
+    }, [success, error]);
+
     if (loading) {
         return (
             <div className="properties-loading">
+                <Loader2 className="animate-spin" style={{ width: '2rem', height: '2rem', marginBottom: '1rem' }} />
                 <div style={{ fontSize: '1.125rem', marginBottom: '0.5rem' }}>
                     Loading Chart of Accounts...
                 </div>
                 <div style={{ fontSize: '0.875rem', color: 'var(--gray-500)' }}>
-                    Fetching accounting structure and account data
+                    Fetching account structure and balances
                 </div>
             </div>
         );
     }
 
-    const hierarchyAccounts = buildAccountHierarchy(accounts);
+    const accountTypeTotals = getAccountTypeTotals();
 
     return (
-        // <div className="properties-container">
         <div className="space-y-6" style={{ padding: '2rem' }}>
+            {/* Success/Error Messages */}
+            {success && (
+                <div style={{
+                    background: 'rgba(34, 197, 94, 0.1)',
+                    border: '1px solid rgba(34, 197, 94, 0.2)',
+                    color: '#059669',
+                    padding: '1rem',
+                    borderRadius: '0.5rem',
+                    marginBottom: '1rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem'
+                }}>
+                    <CheckCircle style={{ width: '1.25rem', height: '1.25rem' }} />
+                    {success}
+                </div>
+            )}
+
+            {error && (
+                <div style={{
+                    background: 'rgba(239, 68, 68, 0.1)',
+                    border: '1px solid rgba(239, 68, 68, 0.2)',
+                    color: '#dc2626',
+                    padding: '1rem',
+                    borderRadius: '0.5rem',
+                    marginBottom: '1rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem'
+                }}>
+                    <AlertTriangle style={{ width: '1.25rem', height: '1.25rem' }} />
+                    {error}
+                </div>
+            )}
+
             {/* Header */}
             <div className="properties-header">
                 <div>
                     <h1 className="properties-title">Chart of Accounts</h1>
                     <p className="properties-subtitle">
-                        Manage your accounting structure and track account balances
+                        Manage your accounting structure and track balances by account type
                     </p>
                 </div>
                 <div className="properties-actions">
                     <button
                         className="btn btn-secondary"
-                        onClick={() => setShowCreateDefault(true)}
+                        onClick={handleRefresh}
+                        disabled={refreshing || !selectedEntity}
+                        style={{ opacity: (refreshing || !selectedEntity) ? 0.5 : 1 }}
                     >
-                        <Settings style={{ width: '1rem', height: '1rem' }} />
-                        Setup Default Chart
+                        <RefreshCw style={{ width: '1rem', height: '1rem' }} />
+                        Refresh
                     </button>
-                    <button className="btn btn-primary" onClick={() => handleAddAccount()}>
+                    <button
+                        className="btn btn-primary"
+                        onClick={() => handleAddAccount()}
+                        disabled={!selectedEntity}
+                        style={{ opacity: !selectedEntity ? 0.5 : 1 }}
+                    >
                         <Plus style={{ width: '1rem', height: '1rem' }} />
                         Add Account
                     </button>
@@ -453,6 +577,7 @@ const ChartOfAccountsManager: React.FC = () => {
                         value={selectedEntity}
                         onChange={(e) => handleEntityChange(e.target.value)}
                         style={{ paddingLeft: '3rem' }}
+                        disabled={entities.length === 0}
                     >
                         <option value="">Select Entity</option>
                         {entities.map(entity => (
@@ -463,23 +588,26 @@ const ChartOfAccountsManager: React.FC = () => {
                     </select>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                    {refreshing && <Loader2 className="animate-spin" style={{ width: '1rem', height: '1rem' }} />}
                     <span style={{ fontSize: '0.875rem', color: 'var(--gray-600)' }}>
-                        {accounts.length} accounts
+                        {chartAccounts.length} accounts
                     </span>
                 </div>
             </div>
 
-            {/* Summary Stats */}
+            {/* Account Type Summary Stats */}
             <div className="stats-grid" style={{ marginBottom: '2rem' }}>
                 <div className="stat-card">
                     <div className="stat-header">
                         <div className="stat-icon stat-icon-blue">
                             <DollarSign style={{ width: '1.5rem', height: '1.5rem' }} />
                         </div>
+                        <div className="stat-trend stat-trend-up">
+                            <ArrowUp style={{ width: '0.875rem', height: '0.875rem' }} />
+                            +5.2%
+                        </div>
                     </div>
-                    <div className="stat-value">
-                        {formatCurrency(accounts.filter(a => a.accountType === 'ASSET').reduce((sum, a) => sum + (a.currentBalance || 0), 0))}
-                    </div>
+                    <div className="stat-value">{formatCurrency(accountTypeTotals.ASSET)}</div>
                     <div className="stat-label">Total Assets</div>
                 </div>
 
@@ -488,10 +616,12 @@ const ChartOfAccountsManager: React.FC = () => {
                         <div className="stat-icon stat-icon-orange">
                             <AlertTriangle style={{ width: '1.5rem', height: '1.5rem' }} />
                         </div>
+                        <div className="stat-trend stat-trend-down">
+                            <ArrowDown style={{ width: '0.875rem', height: '0.875rem' }} />
+                            -2.1%
+                        </div>
                     </div>
-                    <div className="stat-value">
-                        {formatCurrency(accounts.filter(a => a.accountType === 'LIABILITY').reduce((sum, a) => sum + (a.currentBalance || 0), 0))}
-                    </div>
+                    <div className="stat-value">{formatCurrency(accountTypeTotals.LIABILITY)}</div>
                     <div className="stat-label">Total Liabilities</div>
                 </div>
 
@@ -500,27 +630,47 @@ const ChartOfAccountsManager: React.FC = () => {
                         <div className="stat-icon stat-icon-green">
                             <CheckCircle style={{ width: '1.5rem', height: '1.5rem' }} />
                         </div>
+                        <div className="stat-trend stat-trend-up">
+                            <TrendingUp style={{ width: '0.875rem', height: '0.875rem' }} />
+                            +8.7%
+                        </div>
                     </div>
-                    <div className="stat-value">
-                        {formatCurrency(accounts.filter(a => a.accountType === 'REVENUE').reduce((sum, a) => sum + (a.currentBalance || 0), 0))}
-                    </div>
+                    <div className="stat-value">{formatCurrency(accountTypeTotals.REVENUE)}</div>
                     <div className="stat-label">Total Revenue</div>
+                </div>
+
+                <div className="stat-card">
+                    <div className="stat-header">
+                        <div className="stat-icon stat-icon-purple">
+                            <BookOpen style={{ width: '1.5rem', height: '1.5rem' }} />
+                        </div>
+                    </div>
+                    <div className="stat-value">{formatCurrency(accountTypeTotals.EQUITY)}</div>
+                    <div className="stat-label">Total Equity</div>
                 </div>
             </div>
 
-            {/* Account Hierarchy */}
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
-                {hierarchyAccounts.length > 0 ? (
-                    hierarchyAccounts.map(account => renderAccountNode(account))
-                ) : (
+            {/* Chart of Accounts Tree */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                {hierarchicalAccounts.map(account => renderAccountNode(account))}
+
+                {chartAccounts.length === 0 && selectedEntity && !refreshing && (
                     <div className="page-placeholder">
-                        <TreePine style={{ width: '3rem', height: '3rem', marginBottom: '1rem', color: 'var(--gray-400)' }} />
+                        <BookOpen style={{ width: '3rem', height: '3rem', marginBottom: '1rem', color: 'var(--gray-400)' }} />
                         <h3 style={{ fontSize: '1.25rem', fontWeight: '600', marginBottom: '0.5rem' }}>No Chart of Accounts Found</h3>
-                        <p style={{ marginBottom: '1.5rem' }}>Create a standard chart of accounts to get started with proper bookkeeping.</p>
-                        <button className="btn btn-primary" onClick={() => setShowCreateDefault(true)}>
-                            <Settings style={{ width: '1rem', height: '1rem' }} />
-                            Setup Default Chart
+                        <p style={{ marginBottom: '1.5rem' }}>Create your first account to start tracking your finances.</p>
+                        <button className="btn btn-primary" onClick={() => handleAddAccount()}>
+                            <Plus style={{ width: '1rem', height: '1rem' }} />
+                            Add First Account
                         </button>
+                    </div>
+                )}
+
+                {!selectedEntity && (
+                    <div className="page-placeholder">
+                        <Building2 style={{ width: '3rem', height: '3rem', marginBottom: '1rem', color: 'var(--gray-400)' }} />
+                        <h3 style={{ fontSize: '1.25rem', fontWeight: '600', marginBottom: '0.5rem' }}>Select an Entity</h3>
+                        <p style={{ marginBottom: '1.5rem' }}>Choose an entity from the dropdown above to view and manage its chart of accounts.</p>
                     </div>
                 )}
             </div>
@@ -540,12 +690,13 @@ const ChartOfAccountsManager: React.FC = () => {
                     <div className="card" style={{ width: '100%', maxWidth: '28rem', margin: 0 }}>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
                             <h2 style={{ fontSize: '1.25rem', fontWeight: '700', color: 'var(--gray-900)' }}>
-                                {editingAccount ? 'Edit Account' : 'Add Account'}
+                                {editingAccount ? 'Edit Account' : parentAccountForAdd ? 'Add Sub-Account' : 'Add Account'}
                             </h2>
                             <button
                                 onClick={() => {
                                     setShowAddModal(false);
                                     setEditingAccount(null);
+                                    setParentAccountForAdd(null);
                                 }}
                                 style={{
                                     background: 'none',
@@ -555,6 +706,7 @@ const ChartOfAccountsManager: React.FC = () => {
                                     cursor: 'pointer',
                                     color: 'var(--gray-500)'
                                 }}
+                                disabled={submitting}
                             >
                                 <X style={{ width: '1.25rem', height: '1.25rem' }} />
                             </button>
@@ -568,8 +720,9 @@ const ChartOfAccountsManager: React.FC = () => {
                                     className="form-input"
                                     value={formData.accountCode}
                                     onChange={(e) => setFormData(prev => ({ ...prev, accountCode: e.target.value }))}
-                                    placeholder="e.g., 1001"
+                                    placeholder="Enter account code (e.g., 1100)"
                                     required
+                                    disabled={submitting}
                                 />
                             </div>
 
@@ -582,6 +735,7 @@ const ChartOfAccountsManager: React.FC = () => {
                                     onChange={(e) => setFormData(prev => ({ ...prev, accountName: e.target.value }))}
                                     placeholder="Enter account name"
                                     required
+                                    disabled={submitting}
                                 />
                             </div>
 
@@ -592,6 +746,7 @@ const ChartOfAccountsManager: React.FC = () => {
                                     value={formData.accountType}
                                     onChange={(e) => setFormData(prev => ({ ...prev, accountType: e.target.value as any }))}
                                     required
+                                    disabled={submitting || !!parentAccountForAdd}
                                 >
                                     <option value="ASSET">Asset</option>
                                     <option value="LIABILITY">Liability</option>
@@ -599,35 +754,43 @@ const ChartOfAccountsManager: React.FC = () => {
                                     <option value="REVENUE">Revenue</option>
                                     <option value="EXPENSE">Expense</option>
                                 </select>
+                                {parentAccountForAdd && (
+                                    <div style={{ fontSize: '0.75rem', color: 'var(--gray-500)', marginTop: '0.25rem' }}>
+                                        Account type is inherited from parent account
+                                    </div>
+                                )}
                             </div>
 
-                            <div>
-                                <label className="form-label">Parent Account</label>
-                                <select
-                                    className="form-input"
-                                    value={formData.parentId}
-                                    onChange={(e) => setFormData(prev => ({ ...prev, parentId: e.target.value }))}
-                                >
-                                    <option value="">No Parent (Top Level)</option>
-                                    {accounts
-                                        .filter(acc => acc.accountType === formData.accountType && acc.id !== editingAccount?.id)
-                                        .map(account => (
-                                            <option key={account.id} value={account.id}>
-                                                {account.accountCode} - {account.accountName}
-                                            </option>
-                                        ))
-                                    }
-                                </select>
-                            </div>
+                            {!parentAccountForAdd && (
+                                <div>
+                                    <label className="form-label">Parent Account</label>
+                                    <select
+                                        className="form-input"
+                                        value={formData.parentId}
+                                        onChange={(e) => setFormData(prev => ({ ...prev, parentId: e.target.value }))}
+                                        disabled={submitting}
+                                    >
+                                        <option value="">No Parent (Root Account)</option>
+                                        {chartAccounts
+                                            .filter(acc => acc.accountType === formData.accountType && acc.id !== editingAccount?.id)
+                                            .map(account => (
+                                                <option key={account.id} value={account.id}>
+                                                    {account.accountCode} - {account.accountName}
+                                                </option>
+                                            ))}
+                                    </select>
+                                </div>
+                            )}
 
                             <div>
                                 <label className="form-label">Description</label>
-                                <input
-                                    type="text"
+                                <textarea
                                     className="form-input"
+                                    rows={3}
                                     value={formData.description}
                                     onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                                    placeholder="Optional description"
+                                    placeholder="Optional description for this account"
+                                    disabled={submitting}
                                 />
                             </div>
                         </div>
@@ -639,8 +802,10 @@ const ChartOfAccountsManager: React.FC = () => {
                                 onClick={() => {
                                     setShowAddModal(false);
                                     setEditingAccount(null);
+                                    setParentAccountForAdd(null);
                                 }}
                                 style={{ flex: 1 }}
+                                disabled={submitting}
                             >
                                 Cancel
                             </button>
@@ -648,18 +813,31 @@ const ChartOfAccountsManager: React.FC = () => {
                                 type="button"
                                 className="btn btn-primary"
                                 onClick={handleSaveAccount}
-                                style={{ flex: 1 }}
+                                style={{
+                                    flex: 1,
+                                    opacity: submitting ? 0.7 : 1
+                                }}
+                                disabled={submitting}
                             >
-                                <Save style={{ width: '1rem', height: '1rem' }} />
-                                {editingAccount ? 'Update Account' : 'Add Account'}
+                                {submitting ? (
+                                    <>
+                                        <Loader2 className="animate-spin" style={{ width: '1rem', height: '1rem' }} />
+                                        Saving...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Save style={{ width: '1rem', height: '1rem' }} />
+                                        {editingAccount ? 'Update Account' : 'Add Account'}
+                                    </>
+                                )}
                             </button>
                         </div>
                     </div>
                 </div>
             )}
 
-            {/* Create Default Chart Modal */}
-            {showCreateDefault && (
+            {/* View Account Details Modal */}
+            {showViewModal && viewingAccount && (
                 <div style={{
                     position: 'fixed',
                     inset: '0',
@@ -673,10 +851,10 @@ const ChartOfAccountsManager: React.FC = () => {
                     <div className="card" style={{ width: '100%', maxWidth: '32rem', margin: 0 }}>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
                             <h2 style={{ fontSize: '1.25rem', fontWeight: '700', color: 'var(--gray-900)' }}>
-                                Setup Default Chart of Accounts
+                                Account Details
                             </h2>
                             <button
-                                onClick={() => setShowCreateDefault(false)}
+                                onClick={() => setShowViewModal(false)}
                                 style={{
                                     background: 'none',
                                     border: 'none',
@@ -690,36 +868,69 @@ const ChartOfAccountsManager: React.FC = () => {
                             </button>
                         </div>
 
+                        {/* Account Information */}
                         <div style={{ marginBottom: '1.5rem' }}>
-                            <p style={{ marginBottom: '1rem', color: 'var(--gray-600)' }}>
-                                This will create a standard property management chart of accounts including:
-                            </p>
-                            <ul style={{ listStyle: 'disc', paddingLeft: '1.5rem', color: 'var(--gray-600)', fontSize: '0.875rem' }}>
-                                <li>Asset accounts (Cash, Receivables, Security Deposits)</li>
-                                <li>Liability accounts (Payables, Security Deposit Liabilities)</li>
-                                <li>Equity accounts (Owner Equity, Retained Earnings)</li>
-                                <li>Revenue accounts (Rental Income, Fees)</li>
-                                <li>Expense accounts (Maintenance, Utilities, Insurance)</li>
-                            </ul>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+                                <div>
+                                    <div style={{ fontSize: '0.875rem', color: 'var(--gray-500)', marginBottom: '0.25rem' }}>Account Code</div>
+                                    <div style={{ fontWeight: '500' }}>{viewingAccount.accountCode}</div>
+                                </div>
+                                <div>
+                                    <div style={{ fontSize: '0.875rem', color: 'var(--gray-500)', marginBottom: '0.25rem' }}>Account Name</div>
+                                    <div style={{ fontWeight: '500' }}>{viewingAccount.accountName}</div>
+                                </div>
+                                <div>
+                                    <div style={{ fontSize: '0.875rem', color: 'var(--gray-500)', marginBottom: '0.25rem' }}>Account Type</div>
+                                    <div style={{ fontWeight: '500' }}>{viewingAccount.accountType}</div>
+                                </div>
+                                <div>
+                                    <div style={{ fontSize: '0.875rem', color: 'var(--gray-500)', marginBottom: '0.25rem' }}>Current Balance</div>
+                                    <div style={{ fontWeight: '700', fontSize: '1.125rem', color: 'var(--gray-900)' }}>
+                                        {formatCurrency(
+                                            typeof viewingAccount.currentBalance === 'string'
+                                                ? parseFloat(viewingAccount.currentBalance) || 0
+                                                : viewingAccount.currentBalance || 0
+                                        )}
+                                    </div>
+                                </div>
+                                {viewingAccount.parentId && (
+                                    <div style={{ gridColumn: '1 / -1' }}>
+                                        <div style={{ fontSize: '0.875rem', color: 'var(--gray-500)', marginBottom: '0.25rem' }}>Parent Account</div>
+                                        <div style={{ fontWeight: '500' }}>
+                                            {(() => {
+                                                const parent = chartAccounts.find(acc => acc.id === viewingAccount.parentId);
+                                                return parent ? `${parent.accountCode} - ${parent.accountName}` : 'Unknown';
+                                            })()}
+                                        </div>
+                                    </div>
+                                )}
+                                {viewingAccount.description && (
+                                    <div style={{ gridColumn: '1 / -1' }}>
+                                        <div style={{ fontSize: '0.875rem', color: 'var(--gray-500)', marginBottom: '0.25rem' }}>Description</div>
+                                        <div style={{ fontWeight: '500' }}>{viewingAccount.description}</div>
+                                    </div>
+                                )}
+                            </div>
                         </div>
 
-                        <div style={{ display: 'flex', gap: '1rem' }}>
+                        <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem' }}>
                             <button
-                                type="button"
                                 className="btn btn-secondary"
-                                onClick={() => setShowCreateDefault(false)}
+                                onClick={() => setShowViewModal(false)}
                                 style={{ flex: 1 }}
                             >
-                                Cancel
+                                Close
                             </button>
                             <button
-                                type="button"
                                 className="btn btn-primary"
-                                onClick={handleCreateDefaultChart}
+                                onClick={() => {
+                                    setShowViewModal(false);
+                                    handleEditAccount(viewingAccount);
+                                }}
                                 style={{ flex: 1 }}
                             >
-                                <Settings style={{ width: '1rem', height: '1rem' }} />
-                                Create Default Chart
+                                <Edit style={{ width: '1rem', height: '1rem' }} />
+                                Edit Account
                             </button>
                         </div>
                     </div>

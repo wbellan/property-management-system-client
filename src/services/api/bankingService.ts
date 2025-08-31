@@ -51,10 +51,11 @@ export interface ChartAccount {
     entityId: string;
     accountCode: string;
     accountName: string;
-    description?: string;
     accountType: 'ASSET' | 'LIABILITY' | 'EQUITY' | 'REVENUE' | 'EXPENSE';
     parentId?: string;
+    description?: string;
     isActive: boolean;
+    currentBalance?: number;
     createdAt: string;
     updatedAt: string;
 }
@@ -167,6 +168,7 @@ export class BankingService extends BaseApiService {
      * Update an existing chart account
      */
     async updateChartAccount(entityId: string, accountId: string, accountData: Partial<CreateChartAccountData>, token?: string) {
+        console.log('accountData for update chart account', accountData);
         return this.patch(`/entities/${entityId}/chart-accounts/${accountId}`, accountData, token);
     }
 
