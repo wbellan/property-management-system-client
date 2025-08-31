@@ -182,8 +182,8 @@ export class BankingService extends BaseApiService {
     /**
      * Create default chart of accounts for an entity
      */
-    async createDefaultChart(entityId: string, token?: string) {
-        return this.post(`/entities/${entityId}/chart-accounts/default-setup`, {}, token);
+    async setupDefaultChartAccounts(entityId: string, token?: string) {
+        return this.post(`/entities/${entityId}/chart-accounts/setup-default`, {}, token);
     }
 
     // ===============================

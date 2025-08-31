@@ -48,6 +48,7 @@ const ChartOfAccountsManager: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [showAddModal, setShowAddModal] = useState(false);
     const [showViewModal, setShowViewModal] = useState(false);
+    const [showDefaultSetupModal, setShowDefaultSetupModal] = useState(false);
     const [editingAccount, setEditingAccount] = useState<ChartAccount | null>(null);
     const [viewingAccount, setViewingAccount] = useState<ChartAccount | null>(null);
     const [parentAccountForAdd, setParentAccountForAdd] = useState<string | null>(null);
@@ -81,12 +82,35 @@ const ChartOfAccountsManager: React.FC = () => {
         const hierarchy = buildAccountHierarchy(chartAccounts);
         setHierarchicalAccounts(hierarchy);
 
-        // Auto-expand main account types if not already expanded
-        if (expandedNodes.size === 0 && hierarchy.length > 0) {
-            const rootNodes = new Set(hierarchy.map(acc => acc.id));
-            setExpandedNodes(rootNodes);
+        // Always auto-expand nodes that have children (so sub-accounts are visible)
+        const findNodesWithChildren = (accounts: ChartAccountWithChildren[]): string[] => {
+            const nodesWithChildren: string[] = [];
+            accounts.forEach(account => {
+                if (account.children && account.children.length > 0) {
+                    nodesWithChildren.push(account.id);
+                    // Recursively find nested parent nodes
+                    nodesWithChildren.push(...findNodesWithChildren(account.children));
+                }
+            });
+            return nodesWithChildren;
+        };
+
+        const parentNodes = findNodesWithChildren(hierarchy);
+
+        // Always set expanded nodes - include both parent nodes AND root nodes
+        const allNodesToExpand = [...parentNodes];
+
+        // Also include root nodes if we don't have many accounts
+        if (hierarchy.length <= 10) {
+            hierarchy.forEach(acc => {
+                if (!allNodesToExpand.includes(acc.id)) {
+                    allNodesToExpand.push(acc.id);
+                }
+            });
         }
-    }, [chartAccounts]);
+
+        setExpandedNodes(new Set(allNodesToExpand));
+    }, [chartAccounts]); // Remove expandedNodes dependency to avoid issues
 
     const loadInitialData = async () => {
         try {
@@ -134,6 +158,9 @@ const ChartOfAccountsManager: React.FC = () => {
                 const parent = accountMap.get(account.parentId);
                 if (parent && parent.children) {
                     parent.children.push(accountWithChildren);
+                } else {
+                    // If parent not found, treat as root account
+                    rootAccounts.push(accountWithChildren);
                 }
             } else {
                 rootAccounts.push(accountWithChildren);
@@ -268,6 +295,29 @@ const ChartOfAccountsManager: React.FC = () => {
 
     const handleRefresh = () => {
         loadChartAccounts();
+    };
+
+    const handleSetupDefaultChart = async () => {
+        if (!selectedEntity) return;
+
+        try {
+            setSubmitting(true);
+            const response = await bankingService.setupDefaultChartAccounts(selectedEntity);
+
+            if (response.accountsCreated && response.accountsCreated > 0) {
+                setSuccess(`Successfully created ${response.accountsCreated} default accounts!`);
+                // Reload the chart accounts to show the new accounts
+                await loadChartAccounts();
+            } else {
+                setError(response.message || 'Entity already has chart of accounts');
+            }
+
+            setShowDefaultSetupModal(false);
+        } catch (err) {
+            setError(`Failed to setup default chart: ${err.message}`);
+        } finally {
+            setSubmitting(false);
+        }
     };
 
     const toggleNodeExpansion = (nodeId: string) => {
@@ -549,6 +599,19 @@ const ChartOfAccountsManager: React.FC = () => {
                 <div className="properties-actions">
                     <button
                         className="btn btn-secondary"
+                        onClick={() => setShowDefaultSetupModal(true)}
+                        disabled={!selectedEntity || chartAccounts.length > 0}
+                        style={{
+                            opacity: (!selectedEntity || chartAccounts.length > 0) ? 0.5 : 1,
+                            marginRight: '0.5rem'
+                        }}
+                        title={chartAccounts.length > 0 ? "Entity already has chart accounts" : "Setup default chart of accounts"}
+                    >
+                        <Settings style={{ width: '1rem', height: '1rem' }} />
+                        Setup Default Chart
+                    </button>
+                    <button
+                        className="btn btn-secondary"
                         onClick={handleRefresh}
                         disabled={refreshing || !selectedEntity}
                         style={{ opacity: (refreshing || !selectedEntity) ? 0.5 : 1 }}
@@ -658,11 +721,25 @@ const ChartOfAccountsManager: React.FC = () => {
                     <div className="page-placeholder">
                         <BookOpen style={{ width: '3rem', height: '3rem', marginBottom: '1rem', color: 'var(--gray-400)' }} />
                         <h3 style={{ fontSize: '1.25rem', fontWeight: '600', marginBottom: '0.5rem' }}>No Chart of Accounts Found</h3>
-                        <p style={{ marginBottom: '1.5rem' }}>Create your first account to start tracking your finances.</p>
-                        <button className="btn btn-primary" onClick={() => handleAddAccount()}>
-                            <Plus style={{ width: '1rem', height: '1rem' }} />
-                            Add First Account
-                        </button>
+                        <p style={{ marginBottom: '1.5rem' }}>Get started by setting up a default chart of accounts or creating your first custom account.</p>
+                        <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+                            <button
+                                className="btn btn-primary"
+                                onClick={() => setShowDefaultSetupModal(true)}
+                                style={{ minWidth: '180px' }}
+                            >
+                                <Settings style={{ width: '1rem', height: '1rem' }} />
+                                Setup Default Chart
+                            </button>
+                            <button
+                                className="btn btn-secondary"
+                                onClick={() => handleAddAccount()}
+                                style={{ minWidth: '150px' }}
+                            >
+                                <Plus style={{ width: '1rem', height: '1rem' }} />
+                                Add First Account
+                            </button>
+                        </div>
                     </div>
                 )}
 
@@ -828,6 +905,168 @@ const ChartOfAccountsManager: React.FC = () => {
                                     <>
                                         <Save style={{ width: '1rem', height: '1rem' }} />
                                         {editingAccount ? 'Update Account' : 'Add Account'}
+                                    </>
+                                )}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Setup Default Chart Modal */}
+            {showDefaultSetupModal && (
+                <div style={{
+                    position: 'fixed',
+                    inset: '0',
+                    background: 'rgba(0, 0, 0, 0.5)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 50,
+                    padding: '1rem'
+                }}>
+                    <div className="card" style={{ width: '100%', maxWidth: '36rem', margin: 0 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
+                            <h2 style={{ fontSize: '1.25rem', fontWeight: '700', color: 'var(--gray-900)' }}>
+                                Setup Default Chart of Accounts
+                            </h2>
+                            <button
+                                onClick={() => setShowDefaultSetupModal(false)}
+                                style={{
+                                    background: 'none',
+                                    border: 'none',
+                                    padding: '0.5rem',
+                                    borderRadius: '0.5rem',
+                                    cursor: 'pointer',
+                                    color: 'var(--gray-500)'
+                                }}
+                                disabled={submitting}
+                            >
+                                <X style={{ width: '1.25rem', height: '1.25rem' }} />
+                            </button>
+                        </div>
+
+                        <div style={{ marginBottom: '1.5rem' }}>
+                            <p style={{ marginBottom: '1rem', color: 'var(--gray-600)' }}>
+                                This will create a comprehensive property management chart of accounts designed for real estate businesses. This includes:
+                            </p>
+
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '1rem' }}>
+                                <div style={{ padding: '1rem', backgroundColor: 'rgba(59, 130, 246, 0.1)', borderRadius: '0.5rem', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                                        <DollarSign style={{ width: '1rem', height: '1rem', color: '#2563eb' }} />
+                                        <span style={{ fontWeight: '600', color: '#2563eb' }}>Assets</span>
+                                    </div>
+                                    <ul style={{ fontSize: '0.875rem', color: 'var(--gray-600)', margin: 0, paddingLeft: '1rem' }}>
+                                        <li>Cash & Bank Accounts</li>
+                                        <li>Rent Receivables</li>
+                                        <li>Security Deposits</li>
+                                        <li>Property & Equipment</li>
+                                    </ul>
+                                </div>
+
+                                <div style={{ padding: '1rem', backgroundColor: 'rgba(249, 115, 22, 0.1)', borderRadius: '0.5rem', border: '1px solid rgba(249, 115, 22, 0.2)' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                                        <AlertTriangle style={{ width: '1rem', height: '1rem', color: '#ea580c' }} />
+                                        <span style={{ fontWeight: '600', color: '#ea580c' }}>Liabilities</span>
+                                    </div>
+                                    <ul style={{ fontSize: '0.875rem', color: 'var(--gray-600)', margin: 0, paddingLeft: '1rem' }}>
+                                        <li>Accounts Payable</li>
+                                        <li>Security Deposits Held</li>
+                                        <li>Mortgage Payable</li>
+                                        <li>Accrued Expenses</li>
+                                    </ul>
+                                </div>
+
+                                <div style={{ padding: '1rem', backgroundColor: 'rgba(16, 185, 129, 0.1)', borderRadius: '0.5rem', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                                        <CheckCircle style={{ width: '1rem', height: '1rem', color: '#059669' }} />
+                                        <span style={{ fontWeight: '600', color: '#059669' }}>Revenue</span>
+                                    </div>
+                                    <ul style={{ fontSize: '0.875rem', color: 'var(--gray-600)', margin: 0, paddingLeft: '1rem' }}>
+                                        <li>Rental Income</li>
+                                        <li>Late Fees</li>
+                                        <li>Application Fees</li>
+                                        <li>Other Income</li>
+                                    </ul>
+                                </div>
+
+                                <div style={{ padding: '1rem', backgroundColor: 'rgba(239, 68, 68, 0.1)', borderRadius: '0.5rem', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                                        <Settings style={{ width: '1rem', height: '1rem', color: '#dc2626' }} />
+                                        <span style={{ fontWeight: '600', color: '#dc2626' }}>Expenses</span>
+                                    </div>
+                                    <ul style={{ fontSize: '0.875rem', color: 'var(--gray-600)', margin: 0, paddingLeft: '1rem' }}>
+                                        <li>Maintenance & Repairs</li>
+                                        <li>Utilities</li>
+                                        <li>Insurance</li>
+                                        <li>Property Management</li>
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <div style={{
+                                padding: '1rem',
+                                backgroundColor: 'rgba(34, 197, 94, 0.05)',
+                                border: '1px solid rgba(34, 197, 94, 0.2)',
+                                borderRadius: '0.5rem',
+                                marginBottom: '1rem'
+                            }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                                    <CheckCircle style={{ width: '1rem', height: '1rem', color: '#059669' }} />
+                                    <span style={{ fontWeight: '600', color: '#059669' }}>Benefits:</span>
+                                </div>
+                                <ul style={{ fontSize: '0.875rem', color: 'var(--gray-700)', margin: 0, paddingLeft: '1rem' }}>
+                                    <li>Industry-standard account structure for property management</li>
+                                    <li>Organized hierarchy with parent-child account relationships</li>
+                                    <li>Ready for immediate use with proper account codes</li>
+                                    <li>Can be customized after creation to fit your specific needs</li>
+                                </ul>
+                            </div>
+
+                            <div style={{
+                                padding: '1rem',
+                                backgroundColor: 'rgba(251, 191, 36, 0.1)',
+                                border: '1px solid rgba(251, 191, 36, 0.3)',
+                                borderRadius: '0.5rem'
+                            }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                                    <AlertTriangle style={{ width: '1rem', height: '1rem', color: '#d97706' }} />
+                                    <span style={{ fontWeight: '600', color: '#d97706' }}>Note:</span>
+                                </div>
+                                <p style={{ fontSize: '0.875rem', color: 'var(--gray-700)', margin: 0 }}>
+                                    This feature is only available for entities with no existing chart of accounts. Once created, you can modify, add, or deactivate accounts as needed.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div style={{ display: 'flex', gap: '1rem' }}>
+                            <button
+                                className="btn btn-secondary"
+                                onClick={() => setShowDefaultSetupModal(false)}
+                                style={{ flex: 1 }}
+                                disabled={submitting}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                className="btn btn-primary"
+                                onClick={handleSetupDefaultChart}
+                                style={{
+                                    flex: 1,
+                                    opacity: submitting ? 0.7 : 1
+                                }}
+                                disabled={submitting}
+                            >
+                                {submitting ? (
+                                    <>
+                                        <Loader2 className="animate-spin" style={{ width: '1rem', height: '1rem' }} />
+                                        Setting up...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Settings style={{ width: '1rem', height: '1rem' }} />
+                                        Create Default Chart
                                     </>
                                 )}
                             </button>
