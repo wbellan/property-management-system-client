@@ -181,52 +181,52 @@ export class InvitationService extends BaseApiService {
     }
 }
 
-/**
- * Refactored Banking Service using BaseApiService
- */
-export class BankingService extends BaseApiService {
-    // Bank Account Operations
-    async getBankAccounts(entityId: string, includeInactive = false, token?: string) {
-        const queryString = this.buildQueryString({ includeInactive });
-        return this.get(`/entities/${entityId}/banks${queryString}`, token);
-    }
+// /**
+//  * Refactored Banking Service using BaseApiService
+//  */
+// export class BankingService extends BaseApiService {
+//     // Bank Account Operations
+//     async getBankAccounts(entityId: string, includeInactive = false, token?: string) {
+//         const queryString = this.buildQueryString({ includeInactive });
+//         return this.get(`/entities/${entityId}/banks${queryString}`, token);
+//     }
 
-    async getBankAccountDetails(entityId: string, bankId: string, token?: string) {
-        return this.get(`/entities/${entityId}/banks/${bankId}`, token);
-    }
+//     async getBankAccountDetails(entityId: string, bankId: string, token?: string) {
+//         return this.get(`/entities/${entityId}/banks/${bankId}`, token);
+//     }
 
-    async createBankAccount(entityId: string, accountData: any, token?: string) {
-        return this.post(`/entities/${entityId}/banks`, accountData, token);
-    }
+//     async createBankAccount(entityId: string, accountData: any, token?: string) {
+//         return this.post(`/entities/${entityId}/banks`, accountData, token);
+//     }
 
-    async updateBankAccount(entityId: string, bankId: string, accountData: any, token?: string) {
-        return this.patch(`/entities/${entityId}/banks/${bankId}`, accountData, token);
-    }
+//     async updateBankAccount(entityId: string, bankId: string, accountData: any, token?: string) {
+//         return this.patch(`/entities/${entityId}/banks/${bankId}`, accountData, token);
+//     }
 
-    async deactivateBankAccount(entityId: string, bankId: string, token?: string) {
-        return this.delete(`/entities/${entityId}/banks/${bankId}`, token);
-    }
+//     async deactivateBankAccount(entityId: string, bankId: string, token?: string) {
+//         return this.delete(`/entities/${entityId}/banks/${bankId}`, token);
+//     }
 
-    // Chart of Accounts Operations
-    async getChartAccounts(entityId: string, token?: string) {
-        return this.get(`/entities/${entityId}/chart-accounts`, token);
-    }
+//     // Chart of Accounts Operations
+//     async getChartAccounts(entityId: string, token?: string) {
+//         return this.get(`/entities/${entityId}/chart-accounts`, token);
+//     }
 
-    async createChartAccount(entityId: string, accountData: any, token?: string) {
-        return this.post(`/entities/${entityId}/chart-accounts`, accountData, token);
-    }
+//     async createChartAccount(entityId: string, accountData: any, token?: string) {
+//         return this.post(`/entities/${entityId}/chart-accounts`, accountData, token);
+//     }
 
-    // Ledger Entry Operations
-    async getLedgerEntries(entityId: string, options: any = {}, token?: string) {
-        const queryString = this.buildQueryString(options);
-        return this.get(`/entities/${entityId}/ledger-entries${queryString}`, token);
-    }
+//     // Ledger Entry Operations
+//     async getLedgerEntries(entityId: string, options: any = {}, token?: string) {
+//         const queryString = this.buildQueryString(options);
+//         return this.get(`/entities/${entityId}/ledger-entries${queryString}`, token);
+//     }
 
-    async createLedgerEntries(entityId: string, entryData: any, token?: string) {
-        return this.post(`/entities/${entityId}/ledger-entries`, entryData, token);
-    }
-}
+//     async createLedgerEntries(entityId: string, entryData: any, token?: string) {
+//         return this.post(`/entities/${entityId}/ledger-entries`, entryData, token);
+//     }
+// }
 
 // Export singleton instances
 export const invitationService = new InvitationService();
-export const bankingService = new BankingService();
+// export const bankingService = new BankingService();
