@@ -68,8 +68,20 @@ export interface CreateChartAccountData {
     parentId?: string;
 }
 
+// LEDGER ENTRY INTERFACES - FIXED TO MATCH YOUR ACTUAL DTO
+export interface LedgerEntryLine {
+    id: string;
+    chartAccountId: string;
+    entryType: 'DEBIT' | 'CREDIT';
+    amount: number;
+    description?: string;
+    chartAccount?: ChartAccount;
+}
+
+// FIXED - Match your actual backend structure
 export interface LedgerEntry {
     id: string;
+    entityId: string;
     bankLedgerId: string;
     chartAccountId: string;
     transactionType: 'DEBIT' | 'CREDIT';
@@ -78,12 +90,17 @@ export interface LedgerEntry {
     transactionDate: string;
     referenceNumber?: string;
     referenceId?: string;
+    entryType: string;
+    debitAmount: string;
+    creditAmount: string;
     createdAt: string;
-    bankLedger: {
+    updatedAt: string;
+    // Relations
+    bankLedger?: {
         id: string;
         accountName: string;
     };
-    chartAccount: {
+    chartAccount?: {
         id: string;
         accountCode: string;
         accountName: string;
@@ -91,18 +108,34 @@ export interface LedgerEntry {
     };
 }
 
-export interface CreateLedgerEntryData {
+// This exactly matches your backend CreateMultipleLedgerEntriesDto
+export interface CreateMultipleLedgerEntriesDto {
     entries: Array<{
         bankLedgerId: string;
         chartAccountId: string;
+        entryType: 'MANUAL' | 'PAYMENT' | 'TRANSFER' | 'ADJUSTMENT' | 'INTEREST' | 'FEE';
+        description: string;
         debitAmount: string;
         creditAmount: string;
-        description: string;
+        transactionDate: string;
+        referenceId?: string;
+        referenceNumber?: string;
     }>;
-    transactionDate: string;
     transactionDescription: string;
-    referenceId?: string;
+}
+
+// Simplified interface for frontend use
+export interface CreateLedgerEntryData {
+    transactionDate: string;
+    description: string;
     referenceNumber?: string;
+    notes?: string;
+    entries: Array<{
+        chartAccountId: string;
+        entryType: 'DEBIT' | 'CREDIT';
+        amount: number;
+        description?: string;
+    }>;
 }
 
 /**
@@ -123,11 +156,11 @@ export class BankingService extends BaseApiService {
         return this.get(`/entities/${entityId}/bank-accounts/${bankId}`, token);
     }
 
-    async createBankAccount(entityId: string, accountData: any, token?: string) {
+    async createBankAccount(entityId: string, accountData: CreateBankAccountData, token?: string) {
         return this.post(`/entities/${entityId}/bank-accounts`, accountData, token);
     }
 
-    async updateBankAccount(entityId: string, bankId: string, accountData: any, token?: string) {
+    async updateBankAccount(entityId: string, bankId: string, accountData: UpdateBankAccountData, token?: string) {
         return this.patch(`/entities/${entityId}/bank-accounts/${bankId}`, accountData, token);
     }
 
@@ -143,76 +176,81 @@ export class BankingService extends BaseApiService {
     // CHART OF ACCOUNTS OPERATIONS
     // ===============================
 
-    /**
-    * Get all chart of accounts for an entity
-    */
-    async getChartAccounts(entityId: string, token?: string) {
+    async getChartAccounts(entityId: string, token?: string): Promise<ChartAccount[]> {
         return this.get(`/entities/${entityId}/chart-accounts`, token);
     }
 
-    /**
-     * Get hierarchical chart of accounts
-     */
     async getChartAccountsTree(entityId: string, token?: string): Promise<ChartAccount[]> {
         return this.get(`/entities/${entityId}/chart-accounts/tree`, token);
     }
 
-    /**
-     * Create a new chart account
-     */
-    async createChartAccount(entityId: string, accountData: any, token?: string) {
+    async createChartAccount(entityId: string, accountData: CreateChartAccountData, token?: string): Promise<ChartAccount> {
         return this.post(`/entities/${entityId}/chart-accounts`, accountData, token);
     }
 
-    /**
-     * Update an existing chart account
-     */
-    async updateChartAccount(entityId: string, accountId: string, accountData: Partial<CreateChartAccountData>, token?: string) {
+    async updateChartAccount(entityId: string, accountId: string, accountData: Partial<CreateChartAccountData>, token?: string): Promise<ChartAccount> {
         console.log('accountData for update chart account', accountData);
         return this.patch(`/entities/${entityId}/chart-accounts/${accountId}`, accountData, token);
     }
 
-    /**
-     * Deactivate a chart account
-     */
     async deactivateChartAccount(entityId: string, accountId: string, token?: string) {
         return this.delete(`/entities/${entityId}/chart-accounts/${accountId}`, token);
     }
 
-    /**
-     * Create default chart of accounts for an entity
-     */
     async setupDefaultChartAccounts(entityId: string, token?: string) {
         return this.post(`/entities/${entityId}/chart-accounts/setup-default`, {}, token);
     }
 
     // ===============================
-    // LEDGER ENTRY OPERATIONS
+    // LEDGER ENTRY OPERATIONS - PROPERLY FIXED
     // ===============================
 
-    /**
-     * Get ledger entries for an entity
-     */
-    async getLedgerEntries(entityId: string, options: any = {}, token?: string) {
+    async getLedgerEntries(entityId: string, options: any = {}, token?: string): Promise<LedgerEntry[]> {
         const queryString = this.buildQueryString(options);
         return this.get(`/entities/${entityId}/ledger-entries${queryString}`, token);
     }
+
     /**
-     * Create manual ledger entries (double-entry bookkeeping)
+     * Create multiple ledger entries (double-entry bookkeeping)
+     * Converts frontend format to backend DTO and uses proper BaseApiService method
      */
-    async createLedgerEntries(entityId: string, entryData: any, token?: string) {
-        return this.post(`/entities/${entityId}/ledger-entries`, entryData, token);
+    async createLedgerEntry(entityId: string, entryData: CreateLedgerEntryData, bankAccountId: string, token?: string): Promise<LedgerEntry[]> {
+        // Convert frontend format to backend DTO format that matches your actual DTO
+        const backendDto: CreateMultipleLedgerEntriesDto = {
+            entries: entryData.entries.map(entry => ({
+                bankLedgerId: bankAccountId,
+                chartAccountId: entry.chartAccountId,
+                entryType: 'MANUAL' as const, // From your DTO enum
+                description: entry.description || entryData.description,
+                debitAmount: entry.entryType === 'DEBIT' ? entry.amount.toString() : '0',
+                creditAmount: entry.entryType === 'CREDIT' ? entry.amount.toString() : '0',
+                transactionDate: entryData.transactionDate,
+                referenceId: entryData.referenceNumber || undefined,
+                referenceNumber: entryData.referenceNumber || undefined
+            })),
+            transactionDescription: entryData.description
+        };
+
+        // Use your existing BaseApiService post method
+        return this.post(`/entities/${entityId}/ledger-entries/multiple`, backendDto, token);
     }
 
     /**
-    * Validate double-entry bookkeeping for entries
-    */
-    async validateDoubleEntry(entityId: string, entries: any[], token?: string) {
-        return this.post(`/entities/${entityId}/ledger-entries/validate`, entries, token);
+     * Update ledger entry - placeholder for when backend implements it
+     */
+    async updateLedgerEntry(entityId: string, entryId: string, entryData: CreateLedgerEntryData, token?: string): Promise<LedgerEntry> {
+        throw new Error('Update ledger entry is not yet implemented in the backend API');
+    }
+
+    /**
+     * Delete ledger entry - uses your existing BaseApiService
+     */
+    async deleteLedgerEntry(entityId: string, entryId: string, token?: string) {
+        return this.delete(`/entities/${entityId}/ledger-entries/${entryId}`, token);
     }
 
     // ===============================
-    // PAYMENT INTEGRATION OPERATIONS
+    // SIMPLE PAYMENT OPERATIONS
     // ===============================
 
     /**
@@ -231,10 +269,7 @@ export class BankingService extends BaseApiService {
         },
         token?: string
     ): Promise<LedgerEntry[]> {
-        return this.request(`/entities/${entityId}/ledger-entries/simple`, {
-            method: 'POST',
-            body: JSON.stringify(paymentData),
-        }, token);
+        return this.post(`/entities/${entityId}/ledger-entries/simple`, paymentData, token);
     }
 
     /**
@@ -255,10 +290,7 @@ export class BankingService extends BaseApiService {
         },
         token?: string
     ): Promise<LedgerEntry[]> {
-        return this.request(`/entities/${entityId}/ledger-entries/record-payment`, {
-            method: 'POST',
-            body: JSON.stringify(paymentData),
-        }, token);
+        return this.post(`/entities/${entityId}/ledger-entries/payments`, paymentData, token);
     }
 
     /**
@@ -280,280 +312,8 @@ export class BankingService extends BaseApiService {
         },
         token?: string
     ): Promise<LedgerEntry[]> {
-        return this.request(`/entities/${entityId}/ledger-entries/check-deposits`, {
-            method: 'POST',
-            body: JSON.stringify(depositData),
-        }, token);
+        return this.post(`/entities/${entityId}/ledger-entries/check-deposits`, depositData, token);
     }
 }
 
 export const bankingService = new BankingService();
-
-// class BankingService {
-//     private getAuthHeaders(token?: string): HeadersInit {
-//         const headers: HeadersInit = {
-//             'Content-Type': 'application/json',
-//         };
-
-//         const authToken = token || localStorage.getItem('propflow_token');
-//         if (authToken) {
-//             headers.Authorization = `Bearer ${authToken}`;
-//         }
-
-//         return headers;
-//     }
-
-//     async request<T>(
-//         endpoint: string,
-//         options: RequestInit = {},
-//         token?: string
-//     ): Promise<T> {
-//         const config: RequestInit = {
-//             headers: this.getAuthHeaders(token),
-//             ...options,
-//         };
-
-//         const response = await fetch(`${API_BASE}${endpoint}`, config);
-
-//         if (!response.ok) {
-//             const errorData = await response.json().catch(() => ({}));
-//             throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
-//         }
-
-//         return response.json();
-//     }
-
-//     // ===============================
-//     // BANK ACCOUNT OPERATIONS
-//     // ===============================
-
-//     /**
-//      * Get all bank accounts for an entity
-//      */
-//     async getBankAccounts(entityId: string, includeInactive = false, token?: string): Promise<BankAccount[]> {
-//         return this.request(`/entities/${entityId}/bank-accounts?includeInactive=${includeInactive}`, {}, token);
-//     }
-
-//     /**
-//      * Get detailed bank account information with recent transactions
-//      */
-//     async getBankAccountDetails(entityId: string, bankId: string, token?: string): Promise<BankAccountDetails> {
-//         return this.request(`/entities/${entityId}/bank-accounts/${bankId}`, {}, token);
-//     }
-
-//     /**
-//      * Create a new bank account
-//      */
-//     async createBankAccount(entityId: string, accountData: CreateBankAccountData, token?: string): Promise<BankAccount> {
-//         return this.request(`/entities/${entityId}/bank-accounts`, {
-//             method: 'POST',
-//             body: JSON.stringify(accountData),
-//         }, token);
-//     }
-
-//     /**
-//      * Update an existing bank account
-//      */
-//     async updateBankAccount(entityId: string, bankId: string, accountData: UpdateBankAccountData, token?: string): Promise<BankAccount> {
-//         return this.request(`/entities/${entityId}/bank-accounts/${bankId}`, {
-//             method: 'PATCH',
-//             body: JSON.stringify(accountData),
-//         }, token);
-//     }
-
-//     /**
-//      * Deactivate a bank account (soft delete)
-//      */
-//     async deactivateBankAccount(entityId: string, bankId: string, token?: string): Promise<{ success: boolean; message: string }> {
-//         return this.request(`/entities/${entityId}/bank-accounts/${bankId}`, {
-//             method: 'DELETE',
-//         }, token);
-//     }
-
-//     /**
-//      * Get current balance of a bank account
-//      */
-//     async getBankAccountBalance(entityId: string, bankId: string, token?: string): Promise<{ balance: number; lastUpdated: string }> {
-//         return this.request(`/entities/${entityId}/bank-accounts/${bankId}/balance`, {}, token);
-//     }
-
-//     // ===============================
-//     // CHART OF ACCOUNTS OPERATIONS
-//     // ===============================
-
-//     /**
-//      * Get all chart of accounts for an entity
-//      */
-//     async getChartAccounts(entityId: string, token?: string): Promise<ChartAccount[]> {
-//         return this.request(`/entities/${entityId}/chart-accounts`, {}, token);
-//     }
-
-//     /**
-//      * Get hierarchical chart of accounts
-//      */
-//     async getChartAccountsTree(entityId: string, token?: string): Promise<ChartAccount[]> {
-//         return this.request(`/entities/${entityId}/chart-accounts/tree`, {}, token);
-//     }
-
-//     /**
-//      * Create a new chart account
-//      */
-//     async createChartAccount(entityId: string, accountData: CreateChartAccountData, token?: string): Promise<ChartAccount> {
-//         return this.request(`/entities/${entityId}/chart-accounts`, {
-//             method: 'POST',
-//             body: JSON.stringify(accountData),
-//         }, token);
-//     }
-
-//     /**
-//      * Update an existing chart account
-//      */
-//     async updateChartAccount(entityId: string, accountId: string, accountData: Partial<CreateChartAccountData>, token?: string): Promise<ChartAccount> {
-//         return this.request(`/entities/${entityId}/chart-accounts/${accountId}`, {
-//             method: 'PATCH',
-//             body: JSON.stringify(accountData),
-//         }, token);
-//     }
-
-//     /**
-//      * Deactivate a chart account
-//      */
-//     async deactivateChartAccount(entityId: string, accountId: string, token?: string): Promise<{ success: boolean; message: string }> {
-//         return this.request(`/entities/${entityId}/chart-accounts/${accountId}`, {
-//             method: 'DELETE',
-//         }, token);
-//     }
-
-//     /**
-//      * Create default chart of accounts for an entity
-//      */
-//     async createDefaultChart(entityId: string, token?: string): Promise<ChartAccount[]> {
-//         return this.request(`/entities/${entityId}/chart-accounts/default-setup`, {
-//             method: 'POST',
-//         }, token);
-//     }
-
-//     // ===============================
-//     // LEDGER ENTRY OPERATIONS
-//     // ===============================
-
-//     /**
-//      * Get ledger entries for an entity
-//      */
-//     async getLedgerEntries(
-//         entityId: string,
-//         options: {
-//             bankLedgerId?: string;
-//             chartAccountId?: string;
-//             limit?: number;
-//             offset?: number;
-//         } = {},
-//         token?: string
-//     ): Promise<{ entries: LedgerEntry[]; total: number }> {
-//         const queryParams = new URLSearchParams();
-//         if (options.bankLedgerId) queryParams.set('bankLedgerId', options.bankLedgerId);
-//         if (options.chartAccountId) queryParams.set('chartAccountId', options.chartAccountId);
-//         if (options.limit) queryParams.set('limit', options.limit.toString());
-//         if (options.offset) queryParams.set('offset', options.offset.toString());
-
-//         const queryString = queryParams.toString() ? `?${queryParams.toString()}` : '';
-//         return this.request(`/entities/${entityId}/ledger-entries${queryString}`, {}, token);
-//     }
-
-//     /**
-//      * Create manual ledger entries (double-entry bookkeeping)
-//      */
-//     async createLedgerEntries(entityId: string, entryData: CreateLedgerEntryData, token?: string): Promise<LedgerEntry[]> {
-//         return this.request(`/entities/${entityId}/ledger-entries`, {
-//             method: 'POST',
-//             body: JSON.stringify(entryData),
-//         }, token);
-//     }
-
-//     /**
-//      * Validate double-entry bookkeeping for entries
-//      */
-//     async validateDoubleEntry(entityId: string, entries: any[], token?: string): Promise<{ isValid: boolean; errors: string[] }> {
-//         return this.request(`/entities/${entityId}/ledger-entries/validate`, {
-//             method: 'POST',
-//             body: JSON.stringify(entries),
-//         }, token);
-//     }
-
-//     // ===============================
-//     // PAYMENT INTEGRATION OPERATIONS
-//     // ===============================
-
-//     /**
-//      * Record a simple payment (automatically creates ledger entries)
-//      */
-//     async recordSimplePayment(
-//         entityId: string,
-//         paymentData: {
-//             bankAccountId: string;
-//             accountId: string;
-//             amount: string;
-//             description: string;
-//             transactionDate: string;
-//             transactionType: 'DEPOSIT' | 'WITHDRAWAL' | 'PAYMENT' | 'TRANSFER';
-//             referenceNumber?: string;
-//         },
-//         token?: string
-//     ): Promise<LedgerEntry[]> {
-//         return this.request(`/entities/${entityId}/ledger-entries/simple`, {
-//             method: 'POST',
-//             body: JSON.stringify(paymentData),
-//         }, token);
-//     }
-
-//     /**
-//      * Record a payment with automatic ledger entries
-//      */
-//     async recordPayment(
-//         entityId: string,
-//         paymentData: {
-//             payerName: string;
-//             amount: string;
-//             bankAccountId: string;
-//             incomeAccountId: string;
-//             paymentDate: string;
-//             paymentMethod: 'CASH' | 'CHECK' | 'ACH' | 'CREDIT_CARD' | 'BANK_TRANSFER';
-//             description: string;
-//             referenceId?: string;
-//             checkNumber?: string;
-//         },
-//         token?: string
-//     ): Promise<LedgerEntry[]> {
-//         return this.request(`/entities/${entityId}/ledger-entries/record-payment`, {
-//             method: 'POST',
-//             body: JSON.stringify(paymentData),
-//         }, token);
-//     }
-
-//     /**
-//      * Record a check deposit with multiple checks
-//      */
-//     async recordCheckDeposit(
-//         entityId: string,
-//         depositData: {
-//             bankAccountId: string;
-//             depositDate: string;
-//             checks: Array<{
-//                 checkNumber: string;
-//                 amount: string;
-//                 payerName: string;
-//                 incomeAccountId: string;
-//                 memo?: string;
-//             }>;
-//             totalAmount: string;
-//         },
-//         token?: string
-//     ): Promise<LedgerEntry[]> {
-//         return this.request(`/entities/${entityId}/ledger-entries/check-deposits`, {
-//             method: 'POST',
-//             body: JSON.stringify(depositData),
-//         }, token);
-//     }
-// }
-
-// export const bankingService = new BankingService();
