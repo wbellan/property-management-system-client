@@ -119,6 +119,7 @@ const LedgerEntryManager: React.FC = () => {
             // Extract the entries array from the response object
             const entries = entriesResponse?.entries || entriesResponse || [];
             setLedgerEntries(Array.isArray(entries) ? entries : []);
+            console.log('Ledger Entries', entries);
 
             if (entries?.length > 0) {
                 console.log('First entry data structure:', {
@@ -202,6 +203,7 @@ const LedgerEntryManager: React.FC = () => {
     };
 
     const handleViewEntry = (entry: LedgerEntry) => {
+        console.log('handleViewEntry', entry);
         setViewingEntry(entry);
         setShowViewModal(true);
     };

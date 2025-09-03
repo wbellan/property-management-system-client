@@ -272,47 +272,127 @@ export class BankingService extends BaseApiService {
         return this.post(`/entities/${entityId}/ledger-entries/simple`, paymentData, token);
     }
 
+    // ===============================
+    // PAYMENT INTEGRATION OPERATIONS
+    // ===============================
+
+    // Record a single payment
+    async recordPayment(entityId: string, paymentData: any, token?: string) {
+        return this.post(`/entities/${entityId}/payments/record`, paymentData, token);
+    }
+
+    // Record a check deposit with multiple checks
+    async recordCheckDeposit(entityId: string, depositData: any, token?: string) {
+        return this.post(`/entities/${entityId}/payments/checks`, depositData, token);
+    }
+
+    // Record a batch payment deposit
+    async recordPaymentBatch(entityId: string, batchData: any, token?: string) {
+        return this.post(`/entities/${entityId}/payments/batch`, batchData, token);
+    }
+
+    // Get unreconciled payments
+    async getUnreconciledPayments(entityId: string, filters: any = {}, token?: string) {
+        const queryString = this.buildQueryString(filters);
+        return this.get(`/entities/${entityId}/payments/pending${queryString}`, token);
+    }
+
+    // Reconcile a payment with bank statement
+    async reconcilePayment(entityId: string, paymentId: string, reconcileData: any, token?: string) {
+        return this.post(`/entities/${entityId}/payments/${paymentId}/reconcile`, reconcileData, token);
+    }
+
+    // Generate a receipt for a payment
+    async generateReceipt(entityId: string, paymentId: string, receiptData: any, token?: string) {
+        return this.post(`/entities/${entityId}/payments/${paymentId}/receipt`, receiptData, token);
+    }
+
+    // Get available payment methods
+    async getPaymentMethods(entityId: string, token?: string) {
+        return this.get(`/entities/${entityId}/payments/methods`, token);
+    }
+
+    // Get revenue accounts for payment categorization
+    async getRevenueAccounts(entityId: string, token?: string) {
+        return this.get(`/entities/${entityId}/payments/revenue-accounts`, token);
+    }
+
+    // Get payment details with ledger entries
+    async getPaymentDetails(entityId: string, paymentId: string, token?: string) {
+        return this.get(`/entities/${entityId}/payments/${paymentId}/details`, token);
+    }
+
+    // Search for invoices to link to payments
+    async searchInvoicesForPayment(entityId: string, searchTerm: string, token?: string) {
+        const queryString = this.buildQueryString({ search: searchTerm });
+        return this.get(`/entities/${entityId}/invoices/search${queryString}`, token);
+    }
+
+    // Link existing payment to invoice
+    async linkPaymentToInvoice(entityId: string, paymentId: string, invoiceId: string, token?: string) {
+        return this.patch(`/entities/${entityId}/payments/${paymentId}/link-invoice`, { invoiceId }, token);
+    }
+
+    // Add these methods to your existing BankingService class
+
     /**
-     * Record a payment with automatic ledger entries
+     * WORKFLOW 1: Record payment against a specific invoice
      */
-    async recordPayment(
-        entityId: string,
-        paymentData: {
-            payerName: string;
-            amount: string;
-            bankAccountId: string;
-            incomeAccountId: string;
-            paymentDate: string;
-            paymentMethod: 'CASH' | 'CHECK' | 'ACH' | 'CREDIT_CARD' | 'BANK_TRANSFER';
-            description: string;
-            referenceId?: string;
-            checkNumber?: string;
-        },
-        token?: string
-    ): Promise<LedgerEntry[]> {
-        return this.post(`/entities/${entityId}/ledger-entries/payments`, paymentData, token);
+    async recordInvoicePayment(entityId: string, paymentData: {
+        invoiceId: string;
+        bankAccountId: string;
+        amount: string;
+        paymentMethod: 'CHECK' | 'ACH' | 'CASH' | 'CREDIT_CARD' | 'WIRE_TRANSFER';
+        paymentDate: string;
+        payerName: string;
+        referenceNumber?: string;
+        description?: string;
+    }, token?: string) {
+        console.log('💳 Recording invoice payment:', paymentData);
+
+        return this.post(`/entities/${entityId}/payments/record`, {
+            ...paymentData,
+            paymentType: paymentData.paymentMethod,
+            createApplication: true // This tells backend to link to invoice
+        }, token);
     }
 
     /**
-     * Record a check deposit with multiple checks
+     * WORKFLOW 2: Record general deposit (no invoice)
      */
-    async recordCheckDeposit(
-        entityId: string,
-        depositData: {
-            bankAccountId: string;
-            depositDate: string;
-            checks: Array<{
-                checkNumber: string;
-                amount: string;
-                payerName: string;
-                incomeAccountId: string;
-                memo?: string;
-            }>;
-            totalAmount: string;
-        },
-        token?: string
-    ): Promise<LedgerEntry[]> {
-        return this.post(`/entities/${entityId}/ledger-entries/check-deposits`, depositData, token);
+    async recordGeneralDeposit(entityId: string, depositData: {
+        bankAccountId: string;
+        revenueAccountId: string;
+        amount: string;
+        paymentMethod: 'CHECK' | 'ACH' | 'CASH' | 'WIRE_TRANSFER' | 'DEPOSIT';
+        paymentDate: string;
+        description: string;
+        referenceNumber?: string;
+        payerName?: string;
+    }, token?: string) {
+        console.log('🏦 Recording general deposit:', depositData);
+
+        return this.post(`/entities/${entityId}/ledger-entries/simple`, {
+            bankAccountId: depositData.bankAccountId,
+            accountId: depositData.revenueAccountId,
+            amount: depositData.amount,
+            description: depositData.description,
+            transactionDate: depositData.paymentDate,
+            transactionType: 'DEPOSIT',
+            referenceNumber: depositData.referenceNumber
+        }, token);
+    }
+
+    /**
+     * Get outstanding invoices for payment application
+     */
+    async getOutstandingInvoices(entityId: string, filters?: {
+        tenantId?: string;
+        customerName?: string;
+        limit?: number;
+    }, token?: string) {
+        const queryString = this.buildQueryString(filters || {});
+        return this.get(`/entities/${entityId}/invoices/outstanding${queryString}`, token);
     }
 }
 

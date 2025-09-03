@@ -1,3 +1,4 @@
+// src/pages/financial/FinancialsPage.tsx
 import React from 'react';
 import { Routes, Route, NavLink, useLocation } from 'react-router-dom';
 import {
@@ -10,33 +11,32 @@ import {
     RefreshCw,
     AlertTriangle,
     ChevronRight,
-    Banknote,
+    Building2,
     BookOpen,
-    HandCoins,
-    ClipboardList
+    PlusCircle,
+    Wallet
 } from 'lucide-react';
 
-// Import all financial components
+import PaymentDashboard from '../../components/financial/banking/PaymentDashboard';
 import {
-    InvoiceManagement,
-    PaymentApplicationInterface,
-    FinancialDashboard,
     BankingManagementInterface,
     ChartOfAccountsManager,
+    FinancialDashboard,
+    InvoiceManagement,
     LedgerEntryManager,
+    PaymentApplicationInterface,
     PaymentRecordingInterface
 } from '../../components/financial';
-
-import BankReconciliation from '../../components/financial/bank-reconciliation/BankReconciliation';
-import ExpenseManagement from '../../components/financial/expenses/ExpenseManagement';
 import FinancialReports from '../../components/financial/reports/FinancialReports';
-import AutomatedPaymentProcessing from '../../components/financial/payments/AutomatedPaymentProcessing';
+import BankReconciliation from '../../components/financial/bank-reconciliation/BankReconciliation';
+import { AutomatedPaymentProcessing } from '../../components/financial/payments';
 import LateFeeManagement from '../../components/financial/late-fees/LateFeeManagement';
+import ExpenseManagement from '../../components/financial/expenses/ExpenseManagement';
 
 const FinancialsPage: React.FC = () => {
     const location = useLocation();
 
-    // Organized navigation items into logical groups
+    // Enhanced navigation with new banking features integrated
     const navigationGroups = [
         {
             label: 'Overview',
@@ -49,22 +49,32 @@ const FinancialsPage: React.FC = () => {
             ]
         },
         {
-            label: 'Banking',
+            label: 'Banking', // NEW SECTION
             items: [
                 {
-                    path: '/financials/banking',
+                    path: '/financials/bank-accounts',
                     label: 'Bank Accounts',
-                    icon: Banknote
+                    icon: Building2
+                },
+                {
+                    path: '/financials/payment-recording',
+                    label: 'Record Payments',
+                    icon: PlusCircle
+                },
+                {
+                    path: '/financials/payment-dashboard',
+                    label: 'Payment Management',
+                    icon: Wallet
                 },
                 {
                     path: '/financials/chart-accounts',
                     label: 'Chart of Accounts',
-                    icon: BookOpen  // Or TreePine
+                    icon: BookOpen
                 },
                 {
-                    path: '/financials/ledger',
-                    label: 'Ledger',
-                    icon: HandCoins
+                    path: '/financials/ledger-entries',
+                    label: 'Ledger Entries',
+                    icon: FileText
                 }
             ]
         },
@@ -78,23 +88,18 @@ const FinancialsPage: React.FC = () => {
                 },
                 {
                     path: '/financials/payments',
-                    label: 'Payment Applications',
+                    label: 'Payment Matching',
                     icon: CreditCard
                 },
                 {
-                    path: '/financials/record-payments',
-                    label: 'Record Payments',
-                    icon: Receipt
-                },
-                {
                     path: '/financials/reconciliation',
-                    label: 'Reconciliation',
-                    icon: DollarSign
+                    label: 'Bank Reconciliation',
+                    icon: RefreshCw
                 }
             ]
         },
         {
-            label: 'Automation',
+            label: 'Operations',
             items: [
                 {
                     path: '/financials/automation',
@@ -103,29 +108,28 @@ const FinancialsPage: React.FC = () => {
                 },
                 {
                     path: '/financials/late-fees',
-                    label: 'Late Fees',
+                    label: 'Late Fee Management',
                     icon: AlertTriangle
+                },
+                {
+                    path: '/financials/expenses',
+                    label: 'Expense Management',
+                    icon: Receipt
                 }
             ]
         },
         {
-            label: 'Analysis',
+            label: 'Reporting',
             items: [
                 {
-                    path: '/financials/expenses',
-                    label: 'Expenses',
-                    icon: Receipt
-                },
-                {
                     path: '/financials/reports',
-                    label: 'Reports',
+                    label: 'Financial Reports',
                     icon: PieChart
                 }
             ]
         }
     ];
 
-    // Get current active path
     const getCurrentPath = () => {
         if (location.pathname === '/financials') return '/financials/dashboard';
         return location.pathname;
@@ -134,16 +138,15 @@ const FinancialsPage: React.FC = () => {
     const activePath = getCurrentPath();
 
     return (
-        // Use full width like other main pages - no artificial constraints
         <div style={{
             display: 'flex',
             minHeight: '100vh',
             width: '100%',
             background: 'linear-gradient(135deg, #eef2ff 0%, #ffffff 50%, #e0f2fe 100%)'
         }}>
-            {/* Compact Sidebar Navigation */}
+            {/* Existing Compact Sidebar Navigation */}
             <div style={{
-                width: '200px', // Compact sidebar
+                width: '200px',
                 background: 'rgba(255, 255, 255, 0.95)',
                 backdropFilter: 'blur(20px)',
                 borderRight: '1px solid rgba(255, 255, 255, 0.2)',
@@ -214,33 +217,18 @@ const FinancialsPage: React.FC = () => {
                                                     : 'transparent',
                                                 color: isActive ? 'white' : '#4b5563',
                                                 boxShadow: isActive
-                                                    ? '0 2px 4px rgba(0, 0, 0, 0.1)'
-                                                    : 'none'
-                                            }}
-                                            onMouseEnter={(e) => {
-                                                if (!isActive) {
-                                                    e.currentTarget.style.background = 'rgba(249, 250, 251, 0.8)';
-                                                    e.currentTarget.style.color = '#111827';
-                                                }
-                                            }}
-                                            onMouseLeave={(e) => {
-                                                if (!isActive) {
-                                                    e.currentTarget.style.background = 'transparent';
-                                                    e.currentTarget.style.color = '#4b5563';
-                                                }
+                                                    ? '0 2px 8px rgba(102, 126, 234, 0.3)'
+                                                    : 'none',
+                                                fontSize: '0.75rem'
                                             }}
                                         >
                                             <div style={{
-                                                width: '1.2rem',
-                                                height: '1.2rem',
-                                                borderRadius: '0.3rem',
-                                                background: isActive
-                                                    ? 'rgba(255, 255, 255, 0.25)'
-                                                    : 'transparent',
                                                 display: 'flex',
                                                 alignItems: 'center',
                                                 justifyContent: 'center',
-                                                flexShrink: 0
+                                                flexShrink: 0,
+                                                width: '14px',
+                                                height: '14px'
                                             }}>
                                                 <Icon size={12} style={{
                                                     color: isActive ? 'white' : '#6b7280'
@@ -276,15 +264,17 @@ const FinancialsPage: React.FC = () => {
                 </div>
             </div>
 
-            {/* Main Content Area - Full width like other pages */}
+            {/* Main Content Area */}
             <div style={{
                 flex: 1,
-                minWidth: 0, // Critical for flex
-                overflow: 'auto' // Allow content to scroll naturally
+                minWidth: 0,
+                overflow: 'auto'
             }}>
                 <Routes>
                     <Route index element={<FinancialDashboard />} />
                     <Route path="dashboard" element={<FinancialDashboard />} />
+
+                    {/* Existing Routes */}
                     <Route path="invoices" element={<InvoiceManagement />} />
                     <Route path="payments" element={<PaymentApplicationInterface />} />
                     <Route path="reconciliation" element={<BankReconciliation />} />
@@ -292,10 +282,13 @@ const FinancialsPage: React.FC = () => {
                     <Route path="late-fees" element={<LateFeeManagement />} />
                     <Route path="expenses" element={<ExpenseManagement />} />
                     <Route path="reports" element={<FinancialReports />} />
-                    <Route path="banking" element={<BankingManagementInterface />} />
+
+                    {/* NEW Banking Routes */}
+                    <Route path="bank-accounts" element={<BankingManagementInterface />} />
                     <Route path="chart-accounts" element={<ChartOfAccountsManager />} />
-                    <Route path="ledger" element={<LedgerEntryManager />} />
-                    <Route path="record-payments" element={<PaymentRecordingInterface />} />
+                    <Route path="ledger-entries" element={<LedgerEntryManager />} />
+                    <Route path="payment-recording" element={<PaymentRecordingInterface />} />
+                    <Route path="payment-dashboard" element={<PaymentDashboard />} />
                 </Routes>
             </div>
         </div>
