@@ -14,7 +14,8 @@ import {
     Building2,
     BookOpen,
     PlusCircle,
-    Wallet
+    Wallet,
+    ListChecks
 } from 'lucide-react';
 
 import PaymentDashboard from '../../components/financial/banking/PaymentDashboard';
@@ -32,6 +33,7 @@ import BankReconciliation from '../../components/financial/bank-reconciliation/B
 import { AutomatedPaymentProcessing } from '../../components/financial/payments';
 import LateFeeManagement from '../../components/financial/late-fees/LateFeeManagement';
 import ExpenseManagement from '../../components/financial/expenses/ExpenseManagement';
+import CheckRegister from '../../components/financial/banking/CheckRegister';
 
 const FinancialsPage: React.FC = () => {
     const location = useLocation();
@@ -55,6 +57,11 @@ const FinancialsPage: React.FC = () => {
                     path: '/financials/bank-accounts',
                     label: 'Bank Accounts',
                     icon: Building2
+                },
+                {
+                    path: '/financials/check-registers',
+                    label: 'Check Registers',
+                    icon: ListChecks
                 },
                 {
                     path: '/financials/payment-recording',
@@ -289,6 +296,7 @@ const FinancialsPage: React.FC = () => {
                     <Route path="ledger-entries" element={<LedgerEntryManager />} />
                     <Route path="payment-recording" element={<PaymentRecordingInterface />} />
                     <Route path="payment-dashboard" element={<PaymentDashboard />} />
+                    <Route path="check-registers" element={<CheckRegister />} />
                 </Routes>
             </div>
         </div>
