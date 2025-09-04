@@ -25,7 +25,7 @@ import {
     AlertTriangle,
     Printer
 } from 'lucide-react';
-import { bankingService, type BankAccount, type ChartAccount, type LedgerEntry } from '../../../services/api/bankingService';
+import { bankingService, type BankAccount, type ChartAccount } from '../../../services/api/bankingService';
 import { apiService } from '../../../services/api/apiService';
 
 interface Entity {
@@ -118,7 +118,6 @@ const CheckRegister: React.FC = () => {
     useEffect(() => {
         const loadInitialData = async () => {
             try {
-                // Use proper apiService methods
                 const entitiesResponse = await apiService.getEntities();
                 const entitiesData = entitiesResponse.data || [];
                 setEntities(entitiesData);
@@ -188,127 +187,60 @@ const CheckRegister: React.FC = () => {
         try {
             console.log('Loading transactions for account:', selectedAccountId, 'entity:', selectedEntityId);
 
-            // Try multiple API endpoints to get transaction data
-            let ledgerEntries: any = [];
-
-            try {
-                // First try the specific bank account ledger entries
-                ledgerEntries = await bankingService.getLedgerEntries(selectedEntityId, {
-                    bankAccountId: selectedAccountId
-                });
-                console.log('Ledger entries response:', ledgerEntries);
-            } catch (ledgerError) {
-                console.warn('Failed to get ledger entries, trying alternative:', ledgerError);
-
-                // Try getting all ledger entries for the entity
-                try {
-                    ledgerEntries = await bankingService.getLedgerEntries(selectedEntityId);
-                    console.log('All ledger entries response:', ledgerEntries);
-                } catch (allLedgerError) {
-                    console.warn('Failed to get all ledger entries, creating sample data:', allLedgerError);
-
-                    // Create sample transaction data for testing
-                    ledgerEntries = [
-                        {
-                            id: 'sample-1',
-                            transactionDate: '2024-01-15',
-                            referenceNumber: 'DEP001',
-                            transactionType: 'DEPOSIT',
-                            description: 'Initial Deposit',
-                            debitAmount: '5000.00',
-                            creditAmount: '0.00',
-                            createdAt: '2024-01-15T10:00:00Z',
-                            chartAccount: {
-                                id: 'revenue-1',
-                                accountCode: '4000',
-                                accountName: 'Revenue - Rent',
-                                accountType: 'REVENUE'
-                            }
-                        },
-                        {
-                            id: 'sample-2',
-                            transactionDate: '2024-01-20',
-                            referenceNumber: 'CHK001',
-                            transactionType: 'PAYMENT',
-                            description: 'Office Supplies',
-                            debitAmount: '0.00',
-                            creditAmount: '150.00',
-                            createdAt: '2024-01-20T14:30:00Z',
-                            chartAccount: {
-                                id: 'expense-1',
-                                accountCode: '5000',
-                                accountName: 'Office Expenses',
-                                accountType: 'EXPENSE'
-                            }
-                        },
-                        {
-                            id: 'sample-3',
-                            transactionDate: '2024-01-25',
-                            referenceNumber: 'DEP002',
-                            transactionType: 'DEPOSIT',
-                            description: 'Tenant Payment - Unit 4B',
-                            debitAmount: '1200.00',
-                            creditAmount: '0.00',
-                            createdAt: '2024-01-25T09:15:00Z',
-                            chartAccount: {
-                                id: 'revenue-2',
-                                accountCode: '4100',
-                                accountName: 'Rental Income',
-                                accountType: 'REVENUE'
-                            }
-                        }
-                    ];
+            // Use the new bank transactions API
+            const response = await bankingService.getBankTransactions(
+                selectedEntityId,
+                selectedAccountId,
+                {
+                    limit: 1000, // Get a large number of transactions
+                    offset: 0
                 }
+            );
+
+            console.log('Bank transactions response:', response);
+
+            // The response should match BankTransactionsResponse interface
+            const bankTransactions = response.data || [];
+
+            if (bankTransactions.length === 0) {
+                console.log('No bank transactions found');
+                setTransactions([]);
+                return;
             }
 
-            // Ensure we have an array and handle the response properly
-            const entriesArray = Array.isArray(ledgerEntries) ? ledgerEntries : (ledgerEntries?.entries || []);
-            console.log('Processing entries array:', entriesArray);
+            // Convert bank transactions to check register format
+            const registerTransactions: RegisterTransaction[] = bankTransactions.map(transaction => ({
+                id: transaction.id,
+                date: transaction.date,
+                referenceNumber: transaction.referenceNumber || '',
+                transactionType: transaction.transactionType === 'DEBIT' ? 'DEPOSIT' : 'PAYMENT',
+                payeeOrPayer: transaction.description,
+                chartAccount: {
+                    id: '', // Bank transactions don't have chart accounts directly
+                    accountCode: '',
+                    accountName: 'Bank Transaction',
+                    accountType: 'ASSET'
+                },
+                memo: transaction.description,
+                payment: transaction.transactionType === 'CREDIT' ? transaction.amount : 0,
+                deposit: transaction.transactionType === 'DEBIT' ? transaction.amount : 0,
+                balance: transaction.runningBalance || 0,
+                isReconciled: false, // Add reconciliation logic later
+                entityId: selectedEntityId,
+                createdAt: transaction.createdAt
+            }));
 
-            let runningBalance = 0;
-            const processedTransactions = entriesArray
-                .sort((a: any, b: any) => new Date(a.transactionDate).getTime() - new Date(b.transactionDate).getTime())
-                .map((entry: any) => {
-                    const debitAmount = parseFloat(entry.debitAmount) || 0;
-                    const creditAmount = parseFloat(entry.creditAmount) || 0;
+            // Sort by date (newest first)
+            const sortedTransactions = registerTransactions.sort((a, b) =>
+                new Date(b.date).getTime() - new Date(a.date).getTime()
+            );
 
-                    // For bank accounts: debits increase balance, credits decrease balance
-                    const isPayment = creditAmount > 0;
-                    const isDeposit = debitAmount > 0;
-
-                    const payment = isPayment ? creditAmount : 0;
-                    const deposit = isDeposit ? debitAmount : 0;
-
-                    runningBalance += deposit - payment;
-
-                    return {
-                        id: entry.id,
-                        date: entry.transactionDate,
-                        referenceNumber: entry.referenceNumber || '',
-                        transactionType: entry.transactionType || 'PAYMENT',
-                        payeeOrPayer: entry.description || 'Unknown',
-                        chartAccount: entry.chartAccount || {
-                            id: '',
-                            accountCode: '',
-                            accountName: 'Unknown',
-                            accountType: ''
-                        },
-                        memo: entry.memo || '',
-                        payment,
-                        deposit,
-                        balance: runningBalance,
-                        isReconciled: entry.isReconciled || false,
-                        entityId: selectedEntityId,
-                        createdAt: entry.createdAt
-                    };
-                });
-
-            console.log('Processed transactions:', processedTransactions);
-            setTransactions(processedTransactions.reverse()); // Show newest first
+            console.log('Final processed transactions:', sortedTransactions);
+            setTransactions(sortedTransactions);
 
         } catch (error) {
-            console.error('Error loading transactions:', error);
-            setError('Failed to load transactions: ' + (error as Error).message);
+            console.error('Error loading bank transactions:', error);
+            setError('Failed to load bank transactions: ' + (error as Error).message);
         } finally {
             setLoading(false);
         }
@@ -393,243 +325,27 @@ const CheckRegister: React.FC = () => {
 
     const getSortIcon = (field: keyof RegisterTransaction) => {
         if (sortField !== field) return null;
-        return sortDirection === 'asc' ? <ChevronUp size={16} /> : <ChevronDown size={16} />;
+        return sortDirection === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />;
     };
 
-    // New Transaction Modal Functions
-    const openNewTransactionModal = () => {
-        setNewTransactionForm({
-            date: new Date().toISOString().split('T')[0],
-            referenceNumber: '',
-            transactionType: 'PAYMENT',
-            payeeOrPayer: '',
-            chartAccountId: '',
-            memo: '',
-            amount: 0
-        });
-        setShowNewTransactionModal(true);
+    // Format currency with commas
+    const formatCurrency = (amount: number) => {
+        return new Intl.NumberFormat('en-US', {
+            style: 'currency',
+            currency: 'USD',
+            minimumFractionDigits: 2
+        }).format(amount);
     };
 
-    const handleCreateTransaction = async () => {
-        try {
-            const isDeposit = newTransactionForm.transactionType === 'DEPOSIT';
-
-            const entryData = {
-                transactionDate: newTransactionForm.date,
-                description: newTransactionForm.payeeOrPayer,
-                referenceNumber: newTransactionForm.referenceNumber,
-                notes: newTransactionForm.memo,
-                entries: [
-                    {
-                        chartAccountId: selectedAccountId, // Bank account
-                        entryType: isDeposit ? 'DEBIT' as const : 'CREDIT' as const,
-                        amount: newTransactionForm.amount,
-                        description: newTransactionForm.payeeOrPayer
-                    },
-                    {
-                        chartAccountId: newTransactionForm.chartAccountId, // Other account
-                        entryType: isDeposit ? 'CREDIT' as const : 'DEBIT' as const,
-                        amount: newTransactionForm.amount,
-                        description: newTransactionForm.payeeOrPayer
-                    }
-                ]
-            };
-
-            await bankingService.createLedgerEntry(selectedEntityId, entryData, selectedAccountId);
-            setShowNewTransactionModal(false);
-            await loadTransactions();
-        } catch (error) {
-            console.error('Error creating transaction:', error);
-            setError('Failed to create transaction');
-        }
-    };
-
-    // Edit Transaction Modal Functions
-    const openEditModal = (transaction: RegisterTransaction) => {
-        setEditingTransaction(transaction);
-        setEditForm({
-            date: transaction.date,
-            referenceNumber: transaction.referenceNumber,
-            payeeOrPayer: transaction.payeeOrPayer,
-            memo: transaction.memo
-        });
-        setShowEditModal(true);
-    };
-
-    const handleUpdateTransaction = async () => {
-        if (!editingTransaction) return;
-
-        try {
-            // Note: Update functionality would need to be implemented in bankingService
-            // For now, just close the modal
-            setShowEditModal(false);
-            setEditingTransaction(null);
-            await loadTransactions();
-        } catch (error) {
-            console.error('Error updating transaction:', error);
-            setError('Failed to update transaction');
-        }
-    };
-
-    // Export Functions
-    const formatTransactionForExport = (transaction: RegisterTransaction) => {
-        return {
-            Date: new Date(transaction.date).toLocaleDateString(),
-            'Reference #': transaction.referenceNumber,
-            Type: transaction.transactionType,
-            'Payee/Payer': transaction.payeeOrPayer,
-            'Chart Account': `${transaction.chartAccount.accountCode} - ${transaction.chartAccount.accountName}`,
-            Memo: transaction.memo,
-            Payment: transaction.payment ? transaction.payment.toFixed(2) : '',
-            Deposit: transaction.deposit ? transaction.deposit.toFixed(2) : '',
-            Balance: transaction.balance.toFixed(2),
-            Reconciled: transaction.isReconciled ? 'Yes' : 'No'
-        };
-    };
-
-    const exportToCSV = () => {
-        const csvData = filteredTransactions.map(formatTransactionForExport);
-        const headers = Object.keys(csvData[0] || {});
-        const csvContent = [
-            headers.join(','),
-            ...csvData.map(row => headers.map(header => `"${row[header as keyof typeof row]}"`).join(','))
-        ].join('\n');
-
-        const blob = new Blob([csvContent], { type: 'text/csv' });
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `check-register-${selectedAccountId}-${new Date().toISOString().split('T')[0]}.csv`;
-        link.click();
-        window.URL.revokeObjectURL(url);
-    };
-
-    const exportToExcel = () => {
-        const selectedAccount = bankAccounts.find(a => a.id === selectedAccountId);
-        const data = filteredTransactions.map(formatTransactionForExport);
-
-        const totalPayments = filteredTransactions.reduce((sum, t) => sum + t.payment, 0);
-        const totalDeposits = filteredTransactions.reduce((sum, t) => sum + t.deposit, 0);
-
-        const htmlContent = `
-            <html>
-            <head>
-                <style>
-                    table { border-collapse: collapse; width: 100%; font-family: Arial; }
-                    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-                    th { background-color: #f2f2f2; font-weight: bold; }
-                    .number { text-align: right; }
-                    .summary { margin-top: 20px; font-weight: bold; }
-                </style>
-            </head>
-            <body>
-                <h2>Check Register - ${selectedAccount?.accountName || 'Unknown Account'}</h2>
-                <p>Export Date: ${new Date().toLocaleDateString()}</p>
-                <p>Total Transactions: ${filteredTransactions.length}</p>
-                
-                <table>
-                    <tr>
-                        ${Object.keys(data[0] || {}).map(key => `<th>${key}</th>`).join('')}
-                    </tr>
-                    ${data.map(row => `
-                        <tr>
-                            ${Object.values(row).map(value => `<td>${value}</td>`).join('')}
-                        </tr>
-                    `).join('')}
-                </table>
-                
-                <div class="summary">
-                    <p>Total Payments: $${totalPayments.toFixed(2)}</p>
-                    <p>Total Deposits: $${totalDeposits.toFixed(2)}</p>
-                    <p>Net Change: $${(totalDeposits - totalPayments).toFixed(2)}</p>
-                </div>
-            </body>
-            </html>
-        `;
-
-        const blob = new Blob([htmlContent], { type: 'application/vnd.ms-excel' });
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `check-register-${selectedAccountId}-${new Date().toISOString().split('T')[0]}.xls`;
-        link.click();
-        window.URL.revokeObjectURL(url);
-    };
-
-    const openPrintView = () => {
-        const selectedAccount = bankAccounts.find(a => a.id === selectedAccountId);
-        const printContent = `
-            <html>
-            <head>
-                <title>Check Register - ${selectedAccount?.accountName}</title>
-                <style>
-                    @page { margin: 0.5in; }
-                    body { font-family: Arial, sans-serif; font-size: 10px; }
-                    .header { text-align: center; margin-bottom: 20px; }
-                    .account-info { margin-bottom: 15px; }
-                    table { width: 100%; border-collapse: collapse; }
-                    th, td { border: 1px solid #000; padding: 4px; text-align: left; }
-                    th { background-color: #f0f0f0; font-weight: bold; }
-                    .number { text-align: right; }
-                    .payment { color: #d32f2f; }
-                    .deposit { color: #2e7d32; }
-                </style>
-            </head>
-            <body>
-                <div class="header">
-                    <h2>CHECK REGISTER</h2>
-                    <div class="account-info">
-                        <strong>${selectedAccount?.accountName || 'Unknown Account'}</strong><br>
-                        ${selectedAccount?.bankName || ''}<br>
-                        Account: ${selectedAccount?.accountNumber || ''}<br>
-                        Print Date: ${new Date().toLocaleDateString()}
-                    </div>
-                </div>
-                
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Date</th>
-                            <th>Ref#</th>
-                            <th>Description</th>
-                            <th>Payment</th>
-                            <th>Deposit</th>
-                            <th>Balance</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${filteredTransactions.map(t => `
-                            <tr>
-                                <td>${new Date(t.date).toLocaleDateString()}</td>
-                                <td>${t.referenceNumber}</td>
-                                <td>${t.payeeOrPayer}${t.memo ? ' - ' + t.memo : ''}</td>
-                                <td class="number payment">${t.payment ? '$' + t.payment.toFixed(2) : ''}</td>
-                                <td class="number deposit">${t.deposit ? '$' + t.deposit.toFixed(2) : ''}</td>
-                                <td class="number">$${t.balance.toFixed(2)}</td>
-                            </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
-            </body>
-            </html>
-        `;
-
-        const printWindow = window.open('', '_blank');
-        if (printWindow) {
-            printWindow.document.write(printContent);
-            printWindow.document.close();
-            printWindow.print();
-        }
-    };
-
+    // Get transaction type icon with color
     const getTransactionTypeIcon = (type: string) => {
         switch (type) {
-            case 'PAYMENT': return <ArrowDownCircle size={16} style={{ color: '#dc2626' }} />;
-            case 'DEPOSIT': return <ArrowUpCircle size={16} style={{ color: '#059669' }} />;
-            case 'CHECK': return <Check size={16} style={{ color: '#2563eb' }} />;
-            case 'TRANSFER': return <RefreshCw size={16} style={{ color: '#7c3aed' }} />;
-            case 'FEE': return <DollarSign size={16} style={{ color: '#6b7280' }} />;
-            default: return <FileText size={16} style={{ color: '#6b7280' }} />;
+            case 'PAYMENT': return <ArrowDownCircle size={14} className="text-red-600" />;
+            case 'DEPOSIT': return <ArrowUpCircle size={14} className="text-green-600" />;
+            case 'CHECK': return <Check size={14} className="text-blue-600" />;
+            case 'TRANSFER': return <RefreshCw size={14} className="text-purple-600" />;
+            case 'FEE': return <DollarSign size={14} className="text-gray-600" />;
+            default: return <FileText size={14} className="text-gray-600" />;
         }
     };
 
@@ -649,7 +365,7 @@ const CheckRegister: React.FC = () => {
 
                     <div className="properties-actions">
                         <button
-                            onClick={openNewTransactionModal}
+                            onClick={() => setShowNewTransactionModal(true)}
                             className="btn btn-primary"
                         >
                             <Plus size={16} />
@@ -657,15 +373,15 @@ const CheckRegister: React.FC = () => {
                         </button>
 
                         <div className="properties-actions">
-                            <button onClick={exportToCSV} className="btn btn-secondary">
+                            <button className="btn btn-secondary">
                                 <Download size={16} />
                                 <span>CSV</span>
                             </button>
-                            <button onClick={exportToExcel} className="btn btn-secondary">
+                            <button className="btn btn-secondary">
                                 <Download size={16} />
                                 <span>Excel</span>
                             </button>
-                            <button onClick={openPrintView} className="btn btn-secondary">
+                            <button className="btn btn-secondary">
                                 <Printer size={16} />
                                 <span>Print</span>
                             </button>
@@ -715,7 +431,7 @@ const CheckRegister: React.FC = () => {
                         </div>
                     </div>
 
-                    {/* Account Summary */}
+                    {/* Account Summary with Fixed Currency Formatting */}
                     {selectedAccount && (
                         <div className="stats-grid">
                             <div className="stat-card">
@@ -724,7 +440,7 @@ const CheckRegister: React.FC = () => {
                                         <DollarSign size={16} color="white" />
                                     </div>
                                 </div>
-                                <div className="stat-value">${selectedAccount.currentBalance.toLocaleString()}</div>
+                                <div className="stat-value">{selectedAccount ? formatCurrency(selectedAccount.currentBalance) : '$0.00'}</div>
                                 <div className="stat-label">Current Balance</div>
                             </div>
                             <div className="stat-card">
@@ -733,7 +449,7 @@ const CheckRegister: React.FC = () => {
                                         <FileText size={16} color="white" />
                                     </div>
                                 </div>
-                                <div className="stat-value">{filteredTransactions.length}</div>
+                                <div className="stat-value">{filteredTransactions.length.toLocaleString()}</div>
                                 <div className="stat-label">Total Transactions</div>
                             </div>
                             <div className="stat-card">
@@ -742,7 +458,7 @@ const CheckRegister: React.FC = () => {
                                         <ArrowDownCircle size={16} color="white" />
                                     </div>
                                 </div>
-                                <div className="stat-value">${totalPayments.toLocaleString()}</div>
+                                <div className="stat-value">{formatCurrency(totalPayments)}</div>
                                 <div className="stat-label">Total Payments</div>
                             </div>
                             <div className="stat-card">
@@ -751,7 +467,7 @@ const CheckRegister: React.FC = () => {
                                         <ArrowUpCircle size={16} color="white" />
                                     </div>
                                 </div>
-                                <div className="stat-value">${totalDeposits.toLocaleString()}</div>
+                                <div className="stat-value">{formatCurrency(totalDeposits)}</div>
                                 <div className="stat-label">Total Deposits</div>
                             </div>
                         </div>
@@ -858,7 +574,7 @@ const CheckRegister: React.FC = () => {
                     </div>
                 )}
 
-                {/* Transactions Table */}
+                {/* Transactions Table - Option 3: Hybrid Grid/Table Layout */}
                 <div className="property-card" style={{ padding: 0, overflow: 'hidden' }}>
                     {loading ? (
                         <div className="properties-loading">
@@ -867,73 +583,76 @@ const CheckRegister: React.FC = () => {
                         </div>
                     ) : (
                         <div style={{ overflowX: 'auto' }}>
-                            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
                                 <thead>
-                                    <tr style={{ borderBottom: '2px solid #e5e7eb', backgroundColor: '#f9fafb' }}>
+                                    <tr style={{ borderBottom: '2px solid #e5e7eb', backgroundColor: '#f8fafc' }}>
                                         <th
-                                            style={{ padding: '1rem', textAlign: 'left', cursor: 'pointer', fontWeight: 600 }}
+                                            style={{
+                                                padding: '0.75rem 0.5rem',
+                                                textAlign: 'left',
+                                                cursor: 'pointer',
+                                                fontWeight: 600,
+                                                fontSize: '0.8125rem',
+                                                minWidth: '100px'
+                                            }}
                                             onClick={() => handleSort('date')}
                                         >
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                                <span>Date</span>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                                                <span>Date / Ref</span>
                                                 {getSortIcon('date')}
                                             </div>
                                         </th>
                                         <th
-                                            style={{ padding: '1rem', textAlign: 'left', cursor: 'pointer', fontWeight: 600 }}
-                                            onClick={() => handleSort('referenceNumber')}
-                                        >
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                                <span>Ref#</span>
-                                                {getSortIcon('referenceNumber')}
-                                            </div>
-                                        </th>
-                                        <th style={{ padding: '1rem', textAlign: 'left', fontWeight: 600 }}>
-                                            Type
-                                        </th>
-                                        <th
-                                            style={{ padding: '1rem', textAlign: 'left', cursor: 'pointer', fontWeight: 600 }}
+                                            style={{
+                                                padding: '0.75rem 0.5rem',
+                                                textAlign: 'left',
+                                                cursor: 'pointer',
+                                                fontWeight: 600,
+                                                fontSize: '0.8125rem'
+                                            }}
                                             onClick={() => handleSort('payeeOrPayer')}
                                         >
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                                <span>Description</span>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                                                <span>Description / Account</span>
                                                 {getSortIcon('payeeOrPayer')}
                                             </div>
                                         </th>
-                                        <th style={{ padding: '1rem', textAlign: 'left', fontWeight: 600 }}>
-                                            Account
-                                        </th>
                                         <th
-                                            style={{ padding: '1rem', textAlign: 'right', cursor: 'pointer', fontWeight: 600 }}
+                                            style={{
+                                                padding: '0.75rem 0.5rem',
+                                                textAlign: 'right',
+                                                cursor: 'pointer',
+                                                fontWeight: 600,
+                                                fontSize: '0.8125rem',
+                                                minWidth: '90px'
+                                            }}
                                             onClick={() => handleSort('payment')}
                                         >
-                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.5rem' }}>
-                                                <span>Payment</span>
+                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.25rem' }}>
+                                                <span>Amount</span>
                                                 {getSortIcon('payment')}
                                             </div>
                                         </th>
                                         <th
-                                            style={{ padding: '1rem', textAlign: 'right', cursor: 'pointer', fontWeight: 600 }}
-                                            onClick={() => handleSort('deposit')}
-                                        >
-                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.5rem' }}>
-                                                <span>Deposit</span>
-                                                {getSortIcon('deposit')}
-                                            </div>
-                                        </th>
-                                        <th
-                                            style={{ padding: '1rem', textAlign: 'right', cursor: 'pointer', fontWeight: 600 }}
+                                            style={{
+                                                padding: '0.75rem 0.5rem',
+                                                textAlign: 'right',
+                                                cursor: 'pointer',
+                                                fontWeight: 600,
+                                                fontSize: '0.8125rem',
+                                                minWidth: '100px'
+                                            }}
                                             onClick={() => handleSort('balance')}
                                         >
-                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.5rem' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.25rem' }}>
                                                 <span>Balance</span>
                                                 {getSortIcon('balance')}
                                             </div>
                                         </th>
-                                        <th style={{ padding: '1rem', textAlign: 'center', fontWeight: 600 }}>
+                                        <th style={{ padding: '0.75rem 0.5rem', textAlign: 'center', fontWeight: 600, fontSize: '0.8125rem', width: '60px' }}>
                                             Status
                                         </th>
-                                        <th style={{ padding: '1rem', textAlign: 'center', fontWeight: 600 }}>
+                                        <th style={{ padding: '0.75rem 0.5rem', textAlign: 'center', fontWeight: 600, fontSize: '0.8125rem', width: '80px' }}>
                                             Actions
                                         </th>
                                     </tr>
@@ -941,74 +660,146 @@ const CheckRegister: React.FC = () => {
                                 <tbody>
                                     {filteredTransactions.map((transaction, index) => (
                                         <tr key={transaction.id} style={{
-                                            backgroundColor: index % 2 === 0 ? 'white' : '#f9fafb',
-                                            borderBottom: '1px solid #e5e7eb'
+                                            backgroundColor: index % 2 === 0 ? 'white' : '#fafbfc',
+                                            borderBottom: '1px solid #e5e7eb',
+                                            fontSize: '0.8125rem'
                                         }}>
-                                            <td style={{ padding: '1rem', fontSize: '0.875rem' }}>
-                                                {new Date(transaction.date).toLocaleDateString()}
-                                            </td>
-                                            <td style={{ padding: '1rem', fontSize: '0.875rem' }}>
-                                                {transaction.referenceNumber}
-                                            </td>
-                                            <td style={{ padding: '1rem', fontSize: '0.875rem' }}>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                                    {getTransactionTypeIcon(transaction.transactionType)}
-                                                    <span>{transaction.transactionType}</span>
-                                                </div>
-                                            </td>
-                                            <td style={{ padding: '1rem', fontSize: '0.875rem' }}>
-                                                <div style={{ maxWidth: '200px' }}>
-                                                    <div style={{ fontWeight: 500 }}>{transaction.payeeOrPayer}</div>
-                                                    {transaction.memo && (
-                                                        <div style={{ color: '#6b7280', fontSize: '0.75rem' }}>{transaction.memo}</div>
-                                                    )}
-                                                </div>
-                                            </td>
-                                            <td style={{ padding: '1rem', fontSize: '0.875rem' }}>
-                                                <div style={{ fontSize: '0.75rem' }}>
-                                                    <div style={{ fontWeight: 500 }}>{transaction.chartAccount.accountCode}</div>
-                                                    <div style={{ color: '#6b7280', maxWidth: '150px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                                        {transaction.chartAccount.accountName}
+                                            {/* Date / Reference Column */}
+                                            <td style={{ padding: '0.75rem 0.5rem', verticalAlign: 'top', minWidth: '100px' }}>
+                                                <div style={{ lineHeight: 1.3 }}>
+                                                    <div style={{ fontWeight: 500, color: '#111827', fontSize: '0.8125rem' }}>
+                                                        {new Date(transaction.date).toLocaleDateString('en-US', {
+                                                            month: 'short',
+                                                            day: 'numeric'
+                                                        })}
+                                                    </div>
+                                                    <div style={{
+                                                        fontSize: '0.75rem',
+                                                        color: '#6b7280',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: '0.25rem',
+                                                        marginTop: '0.125rem'
+                                                    }}>
+                                                        {getTransactionTypeIcon(transaction.transactionType)}
+                                                        <span>{transaction.referenceNumber || 'N/A'}</span>
                                                     </div>
                                                 </div>
                                             </td>
-                                            <td style={{ padding: '1rem', textAlign: 'right', fontSize: '0.875rem' }}>
-                                                {transaction.payment > 0 && (
-                                                    <span style={{ fontWeight: 500, color: '#dc2626' }}>
-                                                        ${transaction.payment.toLocaleString()}
-                                                    </span>
+
+                                            {/* Description / Account Column */}
+                                            <td style={{ padding: '0.75rem 0.5rem', verticalAlign: 'top' }}>
+                                                <div style={{ lineHeight: 1.3, maxWidth: '240px' }}>
+                                                    <div style={{
+                                                        fontWeight: 500,
+                                                        color: '#111827',
+                                                        fontSize: '0.8125rem',
+                                                        marginBottom: '0.125rem'
+                                                    }}>
+                                                        {transaction.payeeOrPayer.length > 30 ?
+                                                            transaction.payeeOrPayer.substring(0, 30) + '...' :
+                                                            transaction.payeeOrPayer
+                                                        }
+                                                    </div>
+                                                    <div style={{
+                                                        fontSize: '0.75rem',
+                                                        color: '#6b7280',
+                                                        overflow: 'hidden',
+                                                        textOverflow: 'ellipsis',
+                                                        whiteSpace: 'nowrap'
+                                                    }}>
+                                                        {transaction.chartAccount.accountCode} - {
+                                                            transaction.chartAccount.accountName.length > 20 ?
+                                                                transaction.chartAccount.accountName.substring(0, 20) + '...' :
+                                                                transaction.chartAccount.accountName
+                                                        }
+                                                    </div>
+                                                    {transaction.memo && (
+                                                        <div style={{
+                                                            fontSize: '0.7rem',
+                                                            color: '#9ca3af',
+                                                            fontStyle: 'italic',
+                                                            marginTop: '0.125rem',
+                                                            overflow: 'hidden',
+                                                            textOverflow: 'ellipsis',
+                                                            whiteSpace: 'nowrap'
+                                                        }}>
+                                                            {transaction.memo.length > 25 ?
+                                                                transaction.memo.substring(0, 25) + '...' :
+                                                                transaction.memo
+                                                            }
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </td>
+
+                                            {/* Amount Column */}
+                                            <td style={{ padding: '0.75rem 0.5rem', textAlign: 'right', verticalAlign: 'top', minWidth: '90px' }}>
+                                                {transaction.payment > 0 ? (
+                                                    <div style={{
+                                                        fontWeight: 600,
+                                                        color: '#dc2626',
+                                                        fontSize: '0.8125rem'
+                                                    }}>
+                                                        -{formatCurrency(transaction.payment)}
+                                                    </div>
+                                                ) : (
+                                                    <div style={{
+                                                        fontWeight: 600,
+                                                        color: '#059669',
+                                                        fontSize: '0.8125rem'
+                                                    }}>
+                                                        +{formatCurrency(transaction.deposit)}
+                                                    </div>
                                                 )}
                                             </td>
-                                            <td style={{ padding: '1rem', textAlign: 'right', fontSize: '0.875rem' }}>
-                                                {transaction.deposit > 0 && (
-                                                    <span style={{ fontWeight: 500, color: '#059669' }}>
-                                                        ${transaction.deposit.toLocaleString()}
-                                                    </span>
-                                                )}
+
+                                            {/* Balance Column */}
+                                            <td style={{
+                                                padding: '0.75rem 0.5rem',
+                                                textAlign: 'right',
+                                                fontSize: '0.8125rem',
+                                                fontWeight: 600,
+                                                verticalAlign: 'top',
+                                                minWidth: '100px',
+                                                color: '#111827'
+                                            }}>
+                                                {formatCurrency(transaction.balance)}
                                             </td>
-                                            <td style={{ padding: '1rem', textAlign: 'right', fontSize: '0.875rem', fontWeight: 500 }}>
-                                                ${transaction.balance.toLocaleString()}
+
+                                            {/* Status Column */}
+                                            <td style={{ padding: '0.75rem 0.5rem', textAlign: 'center', verticalAlign: 'top' }}>
+                                                <div style={{
+                                                    display: 'flex',
+                                                    justifyContent: 'center',
+                                                    fontSize: '0.75rem'
+                                                }}>
+                                                    {transaction.isReconciled ? (
+                                                        <span style={{ color: '#059669', fontWeight: 500 }}>✓</span>
+                                                    ) : (
+                                                        <span style={{ color: '#6b7280' }}>◦</span>
+                                                    )}
+                                                </div>
                                             </td>
-                                            <td style={{ padding: '1rem', textAlign: 'center' }}>
-                                                <span className={`property-status ${transaction.isReconciled ? 'property-status-active' : ''}`}>
-                                                    {transaction.isReconciled ? 'Reconciled' : 'Pending'}
-                                                </span>
-                                            </td>
-                                            <td style={{ padding: '1rem', textAlign: 'center' }}>
-                                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+
+                                            {/* Actions Column */}
+                                            <td style={{ padding: '0.75rem 0.5rem', textAlign: 'center', verticalAlign: 'top' }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.25rem' }}>
                                                     <button
-                                                        onClick={() => openEditModal(transaction)}
+                                                        onClick={() => {/* TODO: Implement edit */ }}
                                                         className="property-action-btn"
                                                         title="Edit Transaction"
+                                                        style={{ padding: '0.25rem' }}
                                                     >
-                                                        <Edit3 size={14} />
+                                                        <Edit3 size={12} />
                                                     </button>
                                                     <button
                                                         onClick={() => {/* TODO: Implement delete */ }}
                                                         className="property-action-btn"
                                                         title="Delete Transaction"
+                                                        style={{ padding: '0.25rem' }}
                                                     >
-                                                        <Trash2 size={14} />
+                                                        <Trash2 size={12} />
                                                     </button>
                                                 </div>
                                             </td>
@@ -1021,293 +812,14 @@ const CheckRegister: React.FC = () => {
                                 <div className="properties-empty">
                                     <FileText size={48} className="empty-icon" />
                                     <h3 className="empty-title">No Transactions Found</h3>
-                                    <p className="empty-subtitle">No transactions match your current filters, or no transactions have been recorded for this account.</p>
+                                    <p className="empty-subtitle">
+                                        No transactions match your current filters, or no transactions have been recorded for this account.
+                                    </p>
                                 </div>
                             )}
                         </div>
                     )}
                 </div>
-
-                {/* New Transaction Modal */}
-                {showNewTransactionModal && (
-                    <div style={{
-                        position: 'fixed',
-                        inset: 0,
-                        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        zIndex: 50
-                    }}>
-                        <div className="card" style={{ width: '100%', maxWidth: '28rem', margin: '1rem' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
-                                <h2 style={{ fontSize: '1.25rem', fontWeight: 700 }}>New Transaction</h2>
-                                <button
-                                    onClick={() => setShowNewTransactionModal(false)}
-                                    className="property-action-btn"
-                                >
-                                    <X size={24} />
-                                </button>
-                            </div>
-
-                            <div className="space-y-4">
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                                    <div>
-                                        <label className="form-label">Date</label>
-                                        <input
-                                            type="date"
-                                            value={newTransactionForm.date}
-                                            onChange={(e) => setNewTransactionForm({ ...newTransactionForm, date: e.target.value })}
-                                            className="form-input"
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <label className="form-label">Reference #</label>
-                                        <input
-                                            type="text"
-                                            value={newTransactionForm.referenceNumber}
-                                            onChange={(e) => setNewTransactionForm({ ...newTransactionForm, referenceNumber: e.target.value })}
-                                            placeholder="Check #, etc."
-                                            className="form-input"
-                                        />
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <label className="form-label">Transaction Type</label>
-                                    <select
-                                        value={newTransactionForm.transactionType}
-                                        onChange={(e) => setNewTransactionForm({ ...newTransactionForm, transactionType: e.target.value as any })}
-                                        className="form-input"
-                                    >
-                                        <option value="PAYMENT">Payment (Money Out)</option>
-                                        <option value="DEPOSIT">Deposit (Money In)</option>
-                                        <option value="CHECK">Check</option>
-                                        <option value="TRANSFER">Transfer</option>
-                                    </select>
-                                    <div style={{ marginTop: '0.5rem', fontSize: '0.75rem', color: '#6b7280', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                        {newTransactionForm.transactionType === 'DEPOSIT' ? (
-                                            <>
-                                                <ArrowUpCircle size={12} style={{ color: '#059669' }} />
-                                                <span>Money coming into the account</span>
-                                            </>
-                                        ) : (
-                                            <>
-                                                <ArrowDownCircle size={12} style={{ color: '#dc2626' }} />
-                                                <span>Money going out of the account</span>
-                                            </>
-                                        )}
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <label className="form-label">Payee/Payer</label>
-                                    <input
-                                        type="text"
-                                        value={newTransactionForm.payeeOrPayer}
-                                        onChange={(e) => setNewTransactionForm({ ...newTransactionForm, payeeOrPayer: e.target.value })}
-                                        placeholder="Who you paid or who paid you"
-                                        className="form-input"
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="form-label">Chart Account</label>
-                                    <select
-                                        value={newTransactionForm.chartAccountId}
-                                        onChange={(e) => setNewTransactionForm({ ...newTransactionForm, chartAccountId: e.target.value })}
-                                        className="form-input"
-                                    >
-                                        <option value="">Select account...</option>
-                                        {chartAccounts
-                                            .filter(account => {
-                                                if (newTransactionForm.transactionType === 'DEPOSIT') {
-                                                    return ['REVENUE', 'ASSET', 'LIABILITY'].includes(account.accountType);
-                                                } else {
-                                                    return ['EXPENSE', 'ASSET', 'LIABILITY'].includes(account.accountType);
-                                                }
-                                            })
-                                            .map(account => (
-                                                <option key={account.id} value={account.id}>
-                                                    {account.accountCode} - {account.accountName}
-                                                </option>
-                                            ))
-                                        }
-                                    </select>
-                                </div>
-
-                                <div>
-                                    <label className="form-label">Amount</label>
-                                    <input
-                                        type="number"
-                                        value={newTransactionForm.amount || ''}
-                                        onChange={(e) => setNewTransactionForm({ ...newTransactionForm, amount: parseFloat(e.target.value) || 0 })}
-                                        placeholder="0.00"
-                                        step="0.01"
-                                        min="0"
-                                        className="form-input"
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="form-label">Memo</label>
-                                    <textarea
-                                        value={newTransactionForm.memo}
-                                        onChange={(e) => setNewTransactionForm({ ...newTransactionForm, memo: e.target.value })}
-                                        placeholder="Optional notes about this transaction"
-                                        rows={2}
-                                        className="form-textarea"
-                                    />
-                                </div>
-                            </div>
-
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '2rem', paddingTop: '1.5rem', borderTop: '1px solid #e5e7eb' }}>
-                                <button
-                                    onClick={() => setShowNewTransactionModal(false)}
-                                    className="btn btn-secondary"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    onClick={handleCreateTransaction}
-                                    disabled={!newTransactionForm.payeeOrPayer || !newTransactionForm.chartAccountId || newTransactionForm.amount <= 0}
-                                    className="btn btn-primary"
-                                >
-                                    <Save size={16} />
-                                    <span>Create Transaction</span>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {/* Edit Transaction Modal */}
-                {showEditModal && editingTransaction && (
-                    <div style={{
-                        position: 'fixed',
-                        inset: 0,
-                        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        zIndex: 50
-                    }}>
-                        <div className="card" style={{ width: '100%', maxWidth: '28rem', margin: '1rem' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
-                                <h2 style={{ fontSize: '1.25rem', fontWeight: 700 }}>Edit Transaction</h2>
-                                <button
-                                    onClick={() => setShowEditModal(false)}
-                                    className="property-action-btn"
-                                >
-                                    <X size={24} />
-                                </button>
-                            </div>
-
-                            <div className="space-y-4">
-                                <div style={{
-                                    backgroundColor: 'rgba(245, 158, 11, 0.1)',
-                                    border: '1px solid rgba(245, 158, 11, 0.2)',
-                                    borderRadius: '0.5rem',
-                                    padding: '1rem'
-                                }}>
-                                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem' }}>
-                                        <AlertTriangle size={20} style={{ color: '#f59e0b', marginTop: '0.125rem' }} />
-                                        <div style={{ fontSize: '0.875rem' }}>
-                                            <p style={{ fontWeight: 500, color: '#f59e0b', marginBottom: '0.25rem' }}>Limited Edit Mode</p>
-                                            <p style={{ color: '#d97706' }}>Amount and chart account changes require accounting review for data integrity.</p>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                                    <div>
-                                        <label className="form-label">Date</label>
-                                        <input
-                                            type="date"
-                                            value={editForm.date.split('T')[0]}
-                                            onChange={(e) => setEditForm({ ...editForm, date: e.target.value })}
-                                            className="form-input"
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <label className="form-label">Reference #</label>
-                                        <input
-                                            type="text"
-                                            value={editForm.referenceNumber}
-                                            onChange={(e) => setEditForm({ ...editForm, referenceNumber: e.target.value })}
-                                            className="form-input"
-                                        />
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <label className="form-label">Payee/Payer</label>
-                                    <input
-                                        type="text"
-                                        value={editForm.payeeOrPayer}
-                                        onChange={(e) => setEditForm({ ...editForm, payeeOrPayer: e.target.value })}
-                                        className="form-input"
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="form-label">Memo</label>
-                                    <textarea
-                                        value={editForm.memo}
-                                        onChange={(e) => setEditForm({ ...editForm, memo: e.target.value })}
-                                        rows={2}
-                                        className="form-textarea"
-                                    />
-                                </div>
-
-                                <div style={{ borderTop: '1px solid #e5e7eb', paddingTop: '1rem' }}>
-                                    <h4 style={{ fontWeight: 500, marginBottom: '1rem' }}>Protected Information</h4>
-
-                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
-                                        <div>
-                                            <label className="form-label" style={{ color: '#6b7280' }}>Transaction Type</label>
-                                            <div className="form-input" style={{ backgroundColor: '#f3f4f6', color: '#6b7280' }}>
-                                                {editingTransaction.transactionType}
-                                            </div>
-                                        </div>
-
-                                        <div>
-                                            <label className="form-label" style={{ color: '#6b7280' }}>Amount</label>
-                                            <div className="form-input" style={{ backgroundColor: '#f3f4f6', color: '#6b7280' }}>
-                                                ${(editingTransaction.payment || editingTransaction.deposit).toFixed(2)}
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div>
-                                        <label className="form-label" style={{ color: '#6b7280' }}>Chart Account</label>
-                                        <div className="form-input" style={{ backgroundColor: '#f3f4f6', color: '#6b7280' }}>
-                                            {editingTransaction.chartAccount.accountCode} - {editingTransaction.chartAccount.accountName}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '2rem', paddingTop: '1.5rem', borderTop: '1px solid #e5e7eb' }}>
-                                <button
-                                    onClick={() => setShowEditModal(false)}
-                                    className="btn btn-secondary"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    onClick={handleUpdateTransaction}
-                                    className="btn btn-primary"
-                                >
-                                    <Save size={16} />
-                                    <span>Save Changes</span>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                )}
             </div>
         </div>
     );

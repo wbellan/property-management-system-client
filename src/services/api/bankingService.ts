@@ -138,6 +138,45 @@ export interface CreateLedgerEntryData {
     }>;
 }
 
+export interface BankTransaction {
+    id: string;
+    date: string;
+    amount: number;
+    description: string;
+    referenceNumber: string | null;
+    transactionType: 'DEBIT' | 'CREDIT';
+    runningBalance: number | null;
+    bankAccountId: string;
+    statementReference: string | null;
+    createdAt: string;
+}
+
+export interface BankTransactionsResponse {
+    data: BankTransaction[];
+    pagination: {
+        total: number;
+        limit: number;
+        offset: number;
+        hasMore: boolean;
+    };
+    meta: {
+        bankAccountId: string;
+        entityId: string;
+        dateRange: {
+            start: string | null;
+            end: string | null;
+        };
+    };
+}
+
+export interface GetBankTransactionsParams {
+    startDate?: string;
+    endDate?: string;
+    limit?: number;
+    offset?: number;
+}
+
+
 /**
  * Banking Service using BaseApiService
  */
@@ -393,6 +432,17 @@ export class BankingService extends BaseApiService {
     }, token?: string) {
         const queryString = this.buildQueryString(filters || {});
         return this.get(`/entities/${entityId}/invoices/outstanding${queryString}`, token);
+    }
+
+    // Get Bank Transactions
+    async getBankTransactions(
+        entityId: string,
+        accountId: string,
+        params?: GetBankTransactionsParams,
+        token?: string
+    ): Promise<BankTransactionsResponse> {
+        const queryString = this.buildQueryString(params || {});
+        return this.get(`/entities/${entityId}/bank-accounts/${accountId}/transactions${queryString}`, token);
     }
 }
 
