@@ -27,6 +27,7 @@ import {
 } from 'lucide-react';
 import { bankingService, type BankAccount, type ChartAccount } from '../../../services/api/bankingService';
 import { apiService } from '../../../services/api/apiService';
+import { exportToCSV, exportToExcel, exportToPDF, type TransactionExportData } from '../../../utils/exportUtils';
 
 interface Entity {
     id: string;
@@ -349,6 +350,116 @@ const CheckRegister: React.FC = () => {
         }
     };
 
+    // Export handler functions
+    const handleExportCSV = async () => {
+        try {
+            if (filteredTransactions.length === 0) {
+                alert('No transactions to export');
+                return;
+            }
+
+            // Convert transactions to export format
+            const exportData: TransactionExportData[] = filteredTransactions.map(t => ({
+                id: t.id,
+                date: t.date,
+                referenceNumber: t.referenceNumber,
+                transactionType: t.transactionType,
+                payeeOrPayer: t.payeeOrPayer,
+                chartAccount: t.chartAccount,
+                memo: t.memo,
+                payment: t.payment,
+                deposit: t.deposit,
+                balance: t.balance
+            }));
+
+            const selectedEntity = entities.find(e => e.id === selectedEntityId);
+
+            const filename = exportToCSV(exportData, {
+                bankAccountName: selectedAccount?.accountName,
+                entityName: selectedEntity?.name,
+            });
+
+            // Show success message
+            alert(`Successfully exported ${filteredTransactions.length} transactions to ${filename}`);
+
+        } catch (error) {
+            console.error('CSV Export Error:', error);
+            alert('Failed to export CSV. Please try again.');
+        }
+    };
+
+    const handleExportExcel = async () => {
+        try {
+            if (filteredTransactions.length === 0) {
+                alert('No transactions to export');
+                return;
+            }
+
+            // Convert transactions to export format
+            const exportData: TransactionExportData[] = filteredTransactions.map(t => ({
+                id: t.id,
+                date: t.date,
+                referenceNumber: t.referenceNumber,
+                transactionType: t.transactionType,
+                payeeOrPayer: t.payeeOrPayer,
+                chartAccount: t.chartAccount,
+                memo: t.memo,
+                payment: t.payment,
+                deposit: t.deposit,
+                balance: t.balance
+            }));
+
+            const selectedEntity = entities.find(e => e.id === selectedEntityId);
+
+            const filename = exportToExcel(exportData, {
+                bankAccountName: selectedAccount?.accountName,
+                entityName: selectedEntity?.name,
+            });
+
+            alert(`Successfully exported ${filteredTransactions.length} transactions to ${filename}`);
+
+        } catch (error) {
+            console.error('Excel Export Error:', error);
+            alert('Failed to export Excel file. Please try again.');
+        }
+    };
+
+    const handlePrintPDF = async () => {
+        try {
+            if (filteredTransactions.length === 0) {
+                alert('No transactions to print');
+                return;
+            }
+
+            // Show loading state
+            const printButton = document.querySelector('[data-action="print"]') as HTMLButtonElement;
+            if (printButton) {
+                printButton.disabled = true;
+                printButton.innerHTML = '<svg class="animate-spin h-4 w-4" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none" stroke-dasharray="32" stroke-dashoffset="32"><animate attributeName="stroke-dashoffset" dur="1s" values="32;0" repeatCount="indefinite" /></circle></svg> Generating...';
+            }
+
+            const selectedEntity = entities.find(e => e.id === selectedEntityId);
+
+            const filename = await exportToPDF('check-register-table', {
+                bankAccountName: selectedAccount?.accountName,
+                entityName: selectedEntity?.name,
+            });
+
+            alert(`Successfully generated PDF: ${filename}`);
+
+        } catch (error) {
+            console.error('PDF Export Error:', error);
+            alert('Failed to generate PDF. Please try again.');
+        } finally {
+            // Restore button state
+            const printButton = document.querySelector('[data-action="print"]') as HTMLButtonElement;
+            if (printButton) {
+                printButton.disabled = false;
+                printButton.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg> Print';
+            }
+        }
+    };
+
     const selectedAccount = bankAccounts.find(a => a.id === selectedAccountId);
     const totalPayments = filteredTransactions.reduce((sum, t) => sum + t.payment, 0);
     const totalDeposits = filteredTransactions.reduce((sum, t) => sum + t.deposit, 0);
@@ -367,21 +478,39 @@ const CheckRegister: React.FC = () => {
                         <button
                             onClick={() => setShowNewTransactionModal(true)}
                             className="btn btn-primary"
+                            disabled={!selectedAccountId}
                         >
                             <Plus size={16} />
                             <span>New Transaction</span>
                         </button>
-
                         <div className="properties-actions">
-                            <button className="btn btn-secondary">
+                            <button
+                                onClick={handleExportCSV}
+                                className="btn btn-secondary"
+                                disabled={filteredTransactions.length === 0}
+                                title="Export to CSV"
+                            >
                                 <Download size={16} />
                                 <span>CSV</span>
                             </button>
-                            <button className="btn btn-secondary">
+
+                            <button
+                                onClick={handleExportExcel}
+                                className="btn btn-secondary"
+                                disabled={filteredTransactions.length === 0}
+                                title="Export to Excel"
+                            >
                                 <Download size={16} />
                                 <span>Excel</span>
                             </button>
-                            <button className="btn btn-secondary">
+
+                            <button
+                                onClick={handlePrintPDF}
+                                className="btn btn-secondary"
+                                disabled={filteredTransactions.length === 0}
+                                data-action="print"
+                                title="Print to PDF"
+                            >
                                 <Printer size={16} />
                                 <span>Print</span>
                             </button>
@@ -574,7 +703,7 @@ const CheckRegister: React.FC = () => {
                     </div>
                 )}
 
-                {/* Transactions Table - Option 3: Hybrid Grid/Table Layout */}
+                {/* Transactions Table - Added ID for PDF export */}
                 <div className="property-card" style={{ padding: 0, overflow: 'hidden' }}>
                     {loading ? (
                         <div className="properties-loading">
@@ -582,7 +711,7 @@ const CheckRegister: React.FC = () => {
                             <span>Loading transactions...</span>
                         </div>
                     ) : (
-                        <div style={{ overflowX: 'auto' }}>
+                        <div id="check-register-table" style={{ overflowX: 'auto' }}>
                             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
                                 <thead>
                                     <tr style={{ borderBottom: '2px solid #e5e7eb', backgroundColor: '#f8fafc' }}>

@@ -15,6 +15,7 @@ import {
     Check,
     X
 } from 'lucide-react';
+import Papa from 'papaparse';
 
 interface BankTransaction {
     id: string;
@@ -183,15 +184,51 @@ const BankReconciliation: React.FC = () => {
 
     const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
-        if (file) {
-            setIsLoading(true);
-            // Simulate file processing
-            setTimeout(() => {
-                setIsLoading(false);
-                // In real implementation, parse CSV/Excel file
-                console.log('Processing bank statement:', file.name);
-            }, 2000);
+        if (!file) return;
+
+        // Only process CSV files for security
+        if (!file.name.toLowerCase().endsWith('.csv')) {
+            alert('Please upload a CSV file only. Excel files (.xlsx, .xls) are not supported for security reasons.');
+            return;
         }
+
+        setIsLoading(true);
+
+        // Use PapaParse to securely parse CSV
+        Papa.parse(file, {
+            header: true,
+            dynamicTyping: true,
+            skipEmptyLines: true,
+            complete: (results) => {
+                setIsLoading(false);
+                try {
+                    // Process the CSV data
+                    const bankTransactions = results.data.map((row: any, index: number) => ({
+                        id: `import-${index}`,
+                        date: row.Date || row.date || row.DATE,
+                        amount: parseFloat(row.Amount || row.amount || row.AMOUNT || '0'),
+                        description: row.Description || row.description || row.DESCRIPTION || '',
+                        reference: row.Reference || row.reference || row.REFERENCE || '',
+                        type: row.Type || row.type || row.TYPE || 'DEBIT'
+                    })).filter(t => t.amount && t.date); // Filter out invalid rows
+
+                    console.log('Imported bank transactions:', bankTransactions);
+
+                    // Update your state with the imported transactions
+                    setBankTransactions(bankTransactions);
+
+                    alert(`Successfully imported ${bankTransactions.length} transactions from ${file.name}`);
+                } catch (error) {
+                    console.error('Error processing CSV:', error);
+                    alert('Error processing the CSV file. Please check the format and try again.');
+                }
+            },
+            error: (error) => {
+                setIsLoading(false);
+                console.error('CSV parsing error:', error);
+                alert('Failed to parse CSV file. Please check the format and try again.');
+            }
+        });
     };
 
     const handleManualMatch = (matchIndex: number, systemTransactionId?: string) => {
@@ -344,7 +381,7 @@ const BankReconciliation: React.FC = () => {
                         <div style={{ position: 'relative' }}>
                             <input
                                 type="file"
-                                accept=".csv,.xlsx,.xls"
+                                accept=".csv"
                                 onChange={handleFileUpload}
                                 style={{ display: 'none' }}
                                 id="bank-statement-upload"
@@ -355,7 +392,7 @@ const BankReconciliation: React.FC = () => {
                                 style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', width: 'auto' }}
                             >
                                 <Upload size={16} />
-                                Upload Statement
+                                Upload CSV Statement
                             </label>
                         </div>
 
