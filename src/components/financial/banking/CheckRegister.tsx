@@ -31,6 +31,7 @@ import { apiService } from '../../../services/api/apiService';
 import { exportToCSV, exportToExcel, exportToPDF, type TransactionExportData } from '../../../utils/exportUtils';
 import NewTransactionModal from './NewTransactionModal';
 import EditTransactionModal from './EditTransactionModal';
+import DeleteTransactionModal from './DeleteTransactionModal';
 
 interface Entity {
     id: string;
@@ -91,6 +92,8 @@ const CheckRegister: React.FC = () => {
     const [showNewTransactionModal, setShowNewTransactionModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
     const [editingTransaction, setEditingTransaction] = useState<RegisterTransaction | null>(null);
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [deletingTransaction, setDeletingTransaction] = useState<RegisterTransaction | null>(null);
 
     // Form states
     const [newTransactionForm, setNewTransactionForm] = useState<NewTransactionData>({
@@ -481,71 +484,58 @@ const CheckRegister: React.FC = () => {
         setEditingTransaction(null);
     };
 
-    const handleDeleteTransaction = async (transaction: RegisterTransaction) => {
-        if (!confirm(`Are you sure you want to delete this transaction?\n\nAmount: ${formatCurrency(transaction.payment || transaction.deposit)}\nDescription: ${transaction.payeeOrPayer}\n\nThis action cannot be undone.`)) {
-            return;
-        }
-
-        try {
-            setLoading(true);
-
-            await bankingService.deleteBankTransaction(
-                selectedEntityId,
-                selectedAccountId,
-                transaction.id
-            );
-
-            // Refresh transactions to show updated list and balances
-            await loadTransactions();
-
-            alert('Transaction deleted successfully');
-
-        } catch (error) {
-            console.error('Error deleting transaction:', error);
-            setError('Failed to delete transaction: ' + (error as Error).message);
-        } finally {
-            setLoading(false);
-        }
+    // Add this handler function
+    const handleDeleteTransaction = (transaction: RegisterTransaction) => {
+        setDeletingTransaction(transaction);
+        setShowDeleteModal(true);
     };
 
-    const handleUpdateTransaction = async () => {
-        if (!editingTransaction) return;
-
-        try {
-            setLoading(true);
-            setError(null);
-
-            // Validate edit form
-            if (!editForm.payeeOrPayer.trim()) {
-                throw new Error('Description is required');
-            }
-
-            const updateData = {
-                description: editForm.payeeOrPayer.trim(),
-                referenceNumber: editForm.referenceNumber || undefined
-            };
-
-            await bankingService.updateBankTransaction(
-                selectedEntityId,
-                selectedAccountId,
-                editingTransaction.id,
-                updateData
-            );
-
-            // Close modal and refresh data
-            setShowEditModal(false);
-            setEditingTransaction(null);
-            await loadTransactions();
-
-            alert('Transaction updated successfully');
-
-        } catch (error) {
-            console.error('Error updating transaction:', error);
-            setError('Failed to update transaction: ' + (error as Error).message);
-        } finally {
-            setLoading(false);
-        }
+    // Add this callback for when deletion is complete
+    const handleTransactionDeleted = () => {
+        // Reload transactions
+        loadTransactions();
+        setShowDeleteModal(false);
+        setDeletingTransaction(null);
     };
+
+    // const handleUpdateTransaction = async () => {
+    //     if (!editingTransaction) return;
+
+    //     try {
+    //         setLoading(true);
+    //         setError(null);
+
+    //         // Validate edit form
+    //         if (!editForm.payeeOrPayer.trim()) {
+    //             throw new Error('Description is required');
+    //         }
+
+    //         const updateData = {
+    //             description: editForm.payeeOrPayer.trim(),
+    //             referenceNumber: editForm.referenceNumber || undefined
+    //         };
+
+    //         await bankingService.updateBankTransaction(
+    //             selectedEntityId,
+    //             selectedAccountId,
+    //             editingTransaction.id,
+    //             updateData
+    //         );
+
+    //         // Close modal and refresh data
+    //         setShowEditModal(false);
+    //         setEditingTransaction(null);
+    //         await loadTransactions();
+
+    //         alert('Transaction updated successfully');
+
+    //     } catch (error) {
+    //         console.error('Error updating transaction:', error);
+    //         setError('Failed to update transaction: ' + (error as Error).message);
+    //     } finally {
+    //         setLoading(false);
+    //     }
+    // };
 
     const selectedAccount = bankAccounts.find(a => a.id === selectedAccountId);
     const totalPayments = filteredTransactions.reduce((sum, t) => sum + t.payment, 0);
@@ -1011,7 +1001,7 @@ const CheckRegister: React.FC = () => {
                                                         <Edit3 size={12} />
                                                     </button>
                                                     <button
-                                                        onClick={() => {/* TODO: Implement delete */ }}
+                                                        onClick={() => handleDeleteTransaction(transaction)}
                                                         className="property-action-btn"
                                                         title="Delete Transaction"
                                                         style={{ padding: '0.25rem' }}
@@ -1056,6 +1046,17 @@ const CheckRegister: React.FC = () => {
                 }}
                 transaction={editingTransaction}
                 onTransactionUpdated={handleTransactionUpdated}
+                selectedEntityId={selectedEntityId}
+                selectedAccountId={selectedAccountId}
+            />
+            <DeleteTransactionModal
+                isOpen={showDeleteModal}
+                onClose={() => {
+                    setShowDeleteModal(false);
+                    setDeletingTransaction(null);
+                }}
+                transaction={deletingTransaction}
+                onTransactionDeleted={handleTransactionDeleted}
                 selectedEntityId={selectedEntityId}
                 selectedAccountId={selectedAccountId}
             />
