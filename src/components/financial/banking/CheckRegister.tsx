@@ -23,12 +23,14 @@ import {
     X,
     Save,
     AlertTriangle,
-    Printer
+    Printer,
+    Hash
 } from 'lucide-react';
 import { bankingService, type BankAccount, type ChartAccount } from '../../../services/api/bankingService';
 import { apiService } from '../../../services/api/apiService';
 import { exportToCSV, exportToExcel, exportToPDF, type TransactionExportData } from '../../../utils/exportUtils';
 import NewTransactionModal from './NewTransactionModal';
+import EditTransactionModal from './EditTransactionModal';
 
 interface Entity {
     id: string;
@@ -465,6 +467,86 @@ const CheckRegister: React.FC = () => {
         // Reload transactions to show the new one
         loadTransactions();
     }
+
+    const handleEditTransaction = (transaction: RegisterTransaction) => {
+        setEditingTransaction(transaction);
+        setShowEditModal(true);
+    };
+
+    // Add this handler for when transaction is updated
+    const handleTransactionUpdated = () => {
+        // Reload transactions to show the updated data
+        loadTransactions();
+        setShowEditModal(false);
+        setEditingTransaction(null);
+    };
+
+    const handleDeleteTransaction = async (transaction: RegisterTransaction) => {
+        if (!confirm(`Are you sure you want to delete this transaction?\n\nAmount: ${formatCurrency(transaction.payment || transaction.deposit)}\nDescription: ${transaction.payeeOrPayer}\n\nThis action cannot be undone.`)) {
+            return;
+        }
+
+        try {
+            setLoading(true);
+
+            await bankingService.deleteBankTransaction(
+                selectedEntityId,
+                selectedAccountId,
+                transaction.id
+            );
+
+            // Refresh transactions to show updated list and balances
+            await loadTransactions();
+
+            alert('Transaction deleted successfully');
+
+        } catch (error) {
+            console.error('Error deleting transaction:', error);
+            setError('Failed to delete transaction: ' + (error as Error).message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleUpdateTransaction = async () => {
+        if (!editingTransaction) return;
+
+        try {
+            setLoading(true);
+            setError(null);
+
+            // Validate edit form
+            if (!editForm.payeeOrPayer.trim()) {
+                throw new Error('Description is required');
+            }
+
+            const updateData = {
+                description: editForm.payeeOrPayer.trim(),
+                referenceNumber: editForm.referenceNumber || undefined
+            };
+
+            await bankingService.updateBankTransaction(
+                selectedEntityId,
+                selectedAccountId,
+                editingTransaction.id,
+                updateData
+            );
+
+            // Close modal and refresh data
+            setShowEditModal(false);
+            setEditingTransaction(null);
+            await loadTransactions();
+
+            alert('Transaction updated successfully');
+
+        } catch (error) {
+            console.error('Error updating transaction:', error);
+            setError('Failed to update transaction: ' + (error as Error).message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const selectedAccount = bankAccounts.find(a => a.id === selectedAccountId);
     const totalPayments = filteredTransactions.reduce((sum, t) => sum + t.payment, 0);
     const totalDeposits = filteredTransactions.reduce((sum, t) => sum + t.deposit, 0);
@@ -921,7 +1003,7 @@ const CheckRegister: React.FC = () => {
                                             <td style={{ padding: '0.75rem 0.5rem', textAlign: 'center', verticalAlign: 'top' }}>
                                                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.25rem' }}>
                                                     <button
-                                                        onClick={() => {/* TODO: Implement edit */ }}
+                                                        onClick={() => handleEditTransaction(transaction)}
                                                         className="property-action-btn"
                                                         title="Edit Transaction"
                                                         style={{ padding: '0.25rem' }}
@@ -956,7 +1038,7 @@ const CheckRegister: React.FC = () => {
                 </div>
             </div>
 
-            {/* Modal - MOVED TO ROOT LEVEL */}
+            {/* Modals - MOVED TO ROOT LEVEL */}
             <NewTransactionModal
                 isOpen={showNewTransactionModal}
                 onClose={() => setShowNewTransactionModal(false)}
@@ -965,6 +1047,17 @@ const CheckRegister: React.FC = () => {
                 bankAccounts={bankAccounts}
                 chartAccounts={chartAccounts}
                 onTransactionCreated={handleTransactionCreated}
+            />
+            <EditTransactionModal
+                isOpen={showEditModal}
+                onClose={() => {
+                    setShowEditModal(false);
+                    setEditingTransaction(null);
+                }}
+                transaction={editingTransaction}
+                onTransactionUpdated={handleTransactionUpdated}
+                selectedEntityId={selectedEntityId}
+                selectedAccountId={selectedAccountId}
             />
         </div>
     );
