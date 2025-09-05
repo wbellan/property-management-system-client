@@ -28,6 +28,7 @@ import {
 import { bankingService, type BankAccount, type ChartAccount } from '../../../services/api/bankingService';
 import { apiService } from '../../../services/api/apiService';
 import { exportToCSV, exportToExcel, exportToPDF, type TransactionExportData } from '../../../utils/exportUtils';
+import NewTransactionModal from './NewTransactionModal';
 
 interface Entity {
     id: string;
@@ -460,6 +461,10 @@ const CheckRegister: React.FC = () => {
         }
     };
 
+    const handleTransactionCreated = () => {
+        // Reload transactions to show the new one
+        loadTransactions();
+    }
     const selectedAccount = bankAccounts.find(a => a.id === selectedAccountId);
     const totalPayments = filteredTransactions.reduce((sum, t) => sum + t.payment, 0);
     const totalDeposits = filteredTransactions.reduce((sum, t) => sum + t.deposit, 0);
@@ -713,6 +718,7 @@ const CheckRegister: React.FC = () => {
                     ) : (
                         <div id="check-register-table" style={{ overflowX: 'auto' }}>
                             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
+                                {/* Your existing table content stays exactly the same */}
                                 <thead>
                                     <tr style={{ borderBottom: '2px solid #e5e7eb', backgroundColor: '#f8fafc' }}>
                                         <th
@@ -936,7 +942,6 @@ const CheckRegister: React.FC = () => {
                                     ))}
                                 </tbody>
                             </table>
-
                             {filteredTransactions.length === 0 && (
                                 <div className="properties-empty">
                                     <FileText size={48} className="empty-icon" />
@@ -950,6 +955,17 @@ const CheckRegister: React.FC = () => {
                     )}
                 </div>
             </div>
+
+            {/* Modal - MOVED TO ROOT LEVEL */}
+            <NewTransactionModal
+                isOpen={showNewTransactionModal}
+                onClose={() => setShowNewTransactionModal(false)}
+                selectedEntityId={selectedEntityId}
+                selectedAccountId={selectedAccountId}
+                bankAccounts={bankAccounts}
+                chartAccounts={chartAccounts}
+                onTransactionCreated={handleTransactionCreated}
+            />
         </div>
     );
 };

@@ -444,6 +444,56 @@ export class BankingService extends BaseApiService {
         const queryString = this.buildQueryString(params || {});
         return this.get(`/entities/${entityId}/bank-accounts/${accountId}/transactions${queryString}`, token);
     }
+
+    // ===============================
+    // TRANSACTION OPERATIONS
+    // ===============================
+
+    async createBankTransaction(
+        entityId: string,
+        accountId: string,
+        transactionData: {
+            amount: number;
+            description: string;
+            transactionDate: string;
+            transactionType: string;
+            referenceNumber?: string;
+        },
+        token?: string
+    ) {
+        return this.post(`/entities/${entityId}/bank-accounts/${accountId}/transactions`, transactionData, token);
+    }
+
+    async getBankTransaction(
+        entityId: string,
+        accountId: string,
+        transactionId: string,
+        token?: string
+    ) {
+        return this.get(`/entities/${entityId}/bank-accounts/${accountId}/transactions/${transactionId}`, token);
+    }
+
+    async updateBankTransaction(
+        entityId: string,
+        accountId: string,
+        transactionId: string,
+        updateData: {
+            description?: string;
+            referenceNumber?: string;
+        },
+        token?: string
+    ) {
+        return this.patch(`/entities/${entityId}/bank-accounts/${accountId}/transactions/${transactionId}`, updateData, token);
+    }
+
+    async deleteBankTransaction(
+        entityId: string,
+        accountId: string,
+        transactionId: string,
+        token?: string
+    ) {
+        return this.delete(`/entities/${entityId}/bank-accounts/${accountId}/transactions/${transactionId}`, token);
+    }
 }
 
 export const bankingService = new BankingService();
